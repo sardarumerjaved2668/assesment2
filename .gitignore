@@ -40,3 +40,7 @@ coverage/
 
 # Temporary
 *.tmp
+
+# Uploaded product images (keep the folder, ignore the binaries)
+backend/uploads/*
+!backend/uploads/.gitkeep
