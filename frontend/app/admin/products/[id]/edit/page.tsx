@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CATEGORIES, PRODUCTS } from '@/lib/dummy-data';
@@ -9,7 +9,7 @@ import { fetchProduct, updateProduct } from '@/lib/api';
 import ImageUpload from '@/components/ImageUpload';
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 interface FormData {
@@ -33,7 +33,7 @@ interface FormErrors {
 const productCategories = CATEGORIES.filter((c) => c !== 'All');
 
 export default function EditProductPage({ params }: PageProps) {
-  const { id } = use(params);
+  const { id } = params;
   const router = useRouter();
   const { token } = useAuthContext();
 

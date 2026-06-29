@@ -3,17 +3,21 @@ import { OrderStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 interface OrderStatusBadgeProps {
-  status: OrderStatus;
+  status: OrderStatus | string;
   className?: string;
 }
 
-const statusConfig: Record<OrderStatus, { label: string; className: string }> = {
+const statusConfig: Record<string, { label: string; className: string }> = {
   pending: {
     label: 'Pending',
     className: 'bg-yellow-100 text-yellow-800 border border-yellow-200',
   },
   processing: {
     label: 'Processing',
+    className: 'bg-blue-100 text-blue-800 border border-blue-200',
+  },
+  confirmed: {
+    label: 'Confirmed',
     className: 'bg-blue-100 text-blue-800 border border-blue-200',
   },
   shipped: {
@@ -31,7 +35,11 @@ const statusConfig: Record<OrderStatus, { label: string; className: string }> = 
 };
 
 export default function OrderStatusBadge({ status, className }: OrderStatusBadgeProps) {
-  const config = statusConfig[status];
+  const config =
+    statusConfig[status] ?? {
+      label: String(status || 'Unknown'),
+      className: 'bg-gray-100 text-gray-700 border border-gray-200',
+    };
   return (
     <span
       className={cn(

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useMemo, useEffect, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PRODUCTS, CATEGORIES } from '@/lib/dummy-data';
-import { FilterState } from '@/lib/types';
+import { FilterState, Product } from '@/lib/types';
+import { fetchProducts } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ProductGrid from '@/components/ProductGrid';
@@ -11,6 +12,39 @@ import SearchFilters from '@/components/SearchFilters';
 import Pagination from '@/components/Pagination';
 
 const PAGE_SIZE = 8;
+
+// Client-side fallback (used only when the backend is unreachable).
+function filterDummy(filters: FilterState, page: number) {
+  let result = [...PRODUCTS];
+  if (filters.search.trim()) {
+    const q = filters.search.toLowerCase();
+    result = result.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q),
+    );
+  }
+  if (filters.category && filters.category !== 'All') {
+    result = result.filter((p) => p.category === filters.category);
+  }
+  if (filters.priceMin > 0) result = result.filter((p) => p.price >= filters.priceMin);
+  if (filters.priceMax > 0) result = result.filter((p) => p.price <= filters.priceMax);
+  switch (filters.sortBy) {
+    case 'price-asc':
+      result.sort((a, b) => a.price - b.price);
+      break;
+    case 'price-desc':
+      result.sort((a, b) => b.price - a.price);
+      break;
+    default:
+      result.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+  }
+  const total = result.length;
+  const data = result.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  return { data, total, totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
+}
 
 function CatalogPage() {
   const searchParams = useSearchParams();
@@ -25,56 +59,64 @@ function CatalogPage() {
   });
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Sync search param from Navbar
+  const [products, setProducts] = useState<Product[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [usingFallback, setUsingFallback] = useState(false);
+
+  // Keep search in sync with the Navbar's ?q= param.
   useEffect(() => {
     const q = searchParams.get('q') ?? '';
     setFilters((prev) => ({ ...prev, search: q }));
     setCurrentPage(1);
   }, [searchParams]);
 
-  const filtered = useMemo(() => {
-    let result = [...PRODUCTS];
+  // Fetch from the backend whenever filters or page change (debounced).
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
 
-    if (filters.search.trim()) {
-      const q = filters.search.toLowerCase();
-      result = result.filter((p) => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
-    }
+    const run = async () => {
+      try {
+        const res = await fetchProducts({
+          search: filters.search || undefined,
+          category: filters.category !== 'All' ? filters.category : undefined,
+          priceMin: filters.priceMin || undefined,
+          priceMax: filters.priceMax || undefined,
+          sortBy: filters.sortBy,
+          page: currentPage,
+          limit: PAGE_SIZE,
+        });
+        if (cancelled) return;
+        setProducts(res.data);
+        setTotal(res.total);
+        setTotalPages(res.totalPages || 1);
+        setUsingFallback(false);
+      } catch {
+        // Backend unreachable — fall back to bundled demo data.
+        if (cancelled) return;
+        const fb = filterDummy(filters, currentPage);
+        setProducts(fb.data);
+        setTotal(fb.total);
+        setTotalPages(fb.totalPages);
+        setUsingFallback(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
 
-    if (filters.category && filters.category !== 'All') {
-      result = result.filter((p) => p.category === filters.category);
-    }
+    const t = setTimeout(run, 300); // debounce search typing
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [filters, currentPage]);
 
-    if (filters.priceMin > 0) {
-      result = result.filter((p) => p.price >= filters.priceMin);
-    }
-
-    if (filters.priceMax > 0) {
-      result = result.filter((p) => p.price <= filters.priceMax);
-    }
-
-    switch (filters.sortBy) {
-      case 'price-asc':
-        result.sort((a, b) => a.price - b.price);
-        break;
-      case 'price-desc':
-        result.sort((a, b) => b.price - a.price);
-        break;
-      case 'newest':
-      default:
-        result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        break;
-    }
-
-    return result;
-  }, [filters]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-  const handleFilterChange = (newFilters: FilterState) => {
+  const handleFilterChange = useCallback((newFilters: FilterState) => {
     setFilters(newFilters);
     setCurrentPage(1);
-  };
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -101,14 +143,36 @@ function CatalogPage() {
           {/* Result count */}
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm text-gray-500">
-              <span className="font-semibold text-gray-900">{filtered.length}</span>{' '}
-              {filtered.length === 1 ? 'product' : 'products'} found
+              {loading ? (
+                'Loading products…'
+              ) : (
+                <>
+                  <span className="font-semibold text-gray-900">{total}</span>{' '}
+                  {total === 1 ? 'product' : 'products'} found
+                </>
+              )}
             </p>
+            {usingFallback && !loading && (
+              <span className="text-xs text-amber-600">Showing demo data — backend offline</span>
+            )}
           </div>
 
-          {/* Grid */}
-          {paginated.length > 0 ? (
-            <ProductGrid products={paginated} />
+          {/* Grid / states */}
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+                <div key={i} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                  <div className="aspect-[4/3] bg-gray-200 animate-pulse" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-9 bg-gray-200 rounded-lg animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : products.length > 0 ? (
+            <ProductGrid products={products} />
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
@@ -128,7 +192,7 @@ function CatalogPage() {
           )}
 
           {/* Pagination */}
-          {totalPages > 1 && (
+          {!loading && totalPages > 1 && (
             <div className="mt-10 flex justify-center">
               <Pagination
                 currentPage={currentPage}

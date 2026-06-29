@@ -31,7 +31,7 @@ export class Order {
   totalAmount: number;
 
   @Column({ nullable: true })
-  shippingAddress: string;
+  shippingAddress: Record<string, any>;
 
   // Order line items are embedded directly in the order document.
   @Column()

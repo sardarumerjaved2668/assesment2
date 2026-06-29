@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useCartContext } from '@/context/CartContext';
 import { useAuthContext } from '@/context/AuthContext';
 import { ShippingAddress } from '@/lib/types';
+import { createOrder } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -23,9 +24,11 @@ const stepLabels = ['Shipping', 'Payment', 'Confirmation'];
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, cartTotal, clearCart } = useCartContext();
-  const { user } = useAuthContext();
+  const { user, token } = useAuthContext();
   const [step, setStep] = useState<Step>(1);
-  const [orderId] = useState(() => `ORD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`);
+  const [orderId, setOrderId] = useState(() => `ORD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`);
+  const [placedTotal, setPlacedTotal] = useState(0);
+  const [orderError, setOrderError] = useState<string | null>(null);
 
   const [shipping, setShipping] = useState<ShippingAddress>({
     firstName: user?.firstName ?? '',
@@ -111,9 +114,32 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (!validatePayment()) return;
     setIsProcessing(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setIsProcessing(false);
-    setStep(3);
+    setOrderError(null);
+    try {
+      if (token && !token.startsWith('mock_')) {
+        // Real checkout — persist the order via the backend.
+        const created = await createOrder(
+          {
+            items: items.map((i) => ({ product: i.product, quantity: i.quantity })),
+            shippingAddress: shipping,
+            shippingCost,
+          },
+          token,
+        );
+        setOrderId(String(created.id));
+      } else {
+        // Demo mode — simulate payment processing.
+        await new Promise((r) => setTimeout(r, 1200));
+      }
+      setPlacedTotal(orderTotal);
+      setStep(3);
+    } catch (err) {
+      setOrderError(
+        err instanceof Error ? err.message : 'Failed to place order. Please try again.',
+      );
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const formatCardNumber = (value: string) => {
@@ -336,6 +362,12 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
+              {orderError && (
+                <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                  {orderError}
+                </div>
+              )}
+
               <div className="flex justify-between">
                 <button
                   type="button"
@@ -388,7 +420,7 @@ export default function CheckoutPage() {
               </div>
 
               <div className="mb-6">
-                <p className="text-lg font-bold text-gray-900">Total Charged: ${orderTotal.toFixed(2)}</p>
+                <p className="text-lg font-bold text-gray-900">Total Charged: ${placedTotal.toFixed(2)}</p>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">

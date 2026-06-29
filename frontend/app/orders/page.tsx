@@ -1,23 +1,55 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ORDERS } from '@/lib/dummy-data';
+import { Order } from '@/lib/types';
+import { fetchOrders } from '@/lib/api';
 import { useAuthContext } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import OrderStatusBadge from '@/components/OrderStatusBadge';
 
 export default function OrdersPage() {
-  const { user } = useAuthContext();
+  const { user, token } = useAuthContext();
   const router = useRouter();
+
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
       router.push('/auth/login');
     }
   }, [user, router]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    setLoading(true);
+
+    const load = async () => {
+      try {
+        if (token && !token.startsWith('mock_')) {
+          const data = await fetchOrders(token);
+          if (!cancelled) setOrders(data);
+        } else {
+          // Demo mode — show bundled sample orders.
+          if (!cancelled) setOrders(ORDERS);
+        }
+      } catch {
+        if (!cancelled) setOrders(ORDERS);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, token]);
 
   if (!user) return null;
 
@@ -28,7 +60,17 @@ export default function OrdersPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">My Orders</h1>
 
-          {ORDERS.length === 0 ? (
+          {loading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-xl border border-gray-100 p-5">
+                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-3" />
+                  <div className="h-3 w-24 bg-gray-200 rounded animate-pulse mb-2" />
+                  <div className="h-3 w-16 bg-gray-200 rounded animate-pulse" />
+                </div>
+              ))}
+            </div>
+          ) : orders.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,13 +85,15 @@ export default function OrdersPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {ORDERS.map((order) => (
+              {orders.map((order) => (
                 <Link key={order.id} href={`/orders/${order.id}`} className="block">
                   <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow hover:border-indigo-100">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2 flex-wrap">
-                          <span className="font-bold text-gray-900 text-sm">{order.id}</span>
+                          <span className="font-bold text-gray-900 text-sm truncate max-w-[10rem]">
+                            #{String(order.id).slice(-8).toUpperCase()}
+                          </span>
                           <OrderStatusBadge status={order.status} />
                         </div>
                         <p className="text-sm text-gray-500">
@@ -75,24 +119,26 @@ export default function OrdersPage() {
                     </div>
 
                     {/* Item thumbnails preview */}
-                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50">
-                      <div className="flex -space-x-2">
-                        {order.items.slice(0, 3).map((item, idx) => (
-                          <div
-                            key={idx}
-                            className="w-8 h-8 rounded-full border-2 border-white bg-gray-100 overflow-hidden"
-                            style={{ zIndex: 3 - idx }}
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={item.product.imageUrl} alt={item.product.name} className="w-full h-full object-cover" />
-                          </div>
-                        ))}
+                    {order.items.length > 0 && (
+                      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50">
+                        <div className="flex -space-x-2">
+                          {order.items.slice(0, 3).map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="w-8 h-8 rounded-full border-2 border-white bg-gray-100 overflow-hidden"
+                              style={{ zIndex: 3 - idx }}
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={item.product.imageUrl} alt={item.product.name} className="w-full h-full object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                        <span className="text-xs text-gray-400 ml-1 truncate">
+                          {order.items.slice(0, 3).map((i) => i.product.name).join(', ')}
+                          {order.items.length > 3 && ` +${order.items.length - 3} more`}
+                        </span>
                       </div>
-                      <span className="text-xs text-gray-400 ml-1">
-                        {order.items.slice(0, 3).map((i) => i.product.name).join(', ')}
-                        {order.items.length > 3 && ` +${order.items.length - 3} more`}
-                      </span>
-                    </div>
+                    )}
                   </div>
                 </Link>
               ))}

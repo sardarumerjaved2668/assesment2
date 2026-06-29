@@ -4,7 +4,7 @@
  * Falls back gracefully when the backend is unreachable.
  */
 
-import { Product } from './types';
+import { Product, Order, ShippingAddress } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -244,4 +244,59 @@ export async function registerUser(payload: {
     signal: AbortSignal.timeout(8000),
   });
   return handleResponse<AuthResponse>(res);
+}
+
+// ─── Orders / Checkout API ──────────────────────────────────────────────────
+
+export interface CreateOrderPayload {
+  items: { product: Product; quantity: number }[];
+  shippingAddress?: ShippingAddress;
+  shippingCost?: number;
+}
+
+/** Create an order (checkout). Requires an authenticated customer token. */
+export async function createOrder(
+  payload: CreateOrderPayload,
+  token: string,
+): Promise<Order> {
+  const res = await fetch(`${API_URL}/orders`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(12000),
+  });
+  return handleResponse<Order>(res);
+}
+
+/** Get the current user's orders (admins receive all orders). */
+export async function fetchOrders(token: string): Promise<Order[]> {
+  const res = await fetch(`${API_URL}/orders`, {
+    headers: authHeaders(token),
+    signal: AbortSignal.timeout(8000),
+  });
+  return handleResponse<Order[]>(res);
+}
+
+/** Get a single order by id. */
+export async function fetchOrder(id: string, token: string): Promise<Order> {
+  const res = await fetch(`${API_URL}/orders/${id}`, {
+    headers: authHeaders(token),
+    signal: AbortSignal.timeout(8000),
+  });
+  return handleResponse<Order>(res);
+}
+
+/** Update an order's status (admin only). */
+export async function updateOrderStatus(
+  id: string,
+  status: string,
+  token: string,
+): Promise<Order> {
+  const res = await fetch(`${API_URL}/orders/${id}/status`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify({ status }),
+    signal: AbortSignal.timeout(8000),
+  });
+  return handleResponse<Order>(res);
 }

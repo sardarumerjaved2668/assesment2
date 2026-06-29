@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PRODUCTS } from '@/lib/dummy-data';
@@ -12,11 +12,11 @@ import Footer from '@/components/Footer';
 import ProductCard from '@/components/ProductCard';
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 export default function ProductDetailPage({ params }: PageProps) {
-  const { id } = use(params);
+  const { id } = params;
   const { addToCart } = useCartContext();
 
   const [product, setProduct] = useState<Product | null>(null);
