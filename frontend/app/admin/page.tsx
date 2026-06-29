@@ -348,10 +348,10 @@ export default function AdminDashboardPage() {
                   </span>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={imageUrl || '/placeholder.png'}
+                    src={imageUrl || '/placeholder.svg'}
                     alt={name}
                     className="w-10 h-10 rounded-xl object-cover bg-gray-100 shrink-0"
-                    onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png'; }}
+                    onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-900 truncate">{name}</p>

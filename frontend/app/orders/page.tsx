@@ -152,7 +152,8 @@ export default function OrdersPage() {
                               style={{ zIndex: 3 - idx }}
                             >
                               {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={item.product.imageUrl} alt={item.product.name} className="w-full h-full object-cover" />
+                              <img src={item.product.imageUrl} alt={item.product.name} className="w-full h-full object-cover"
+                                onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }} />
                             </div>
                           ))}
                         </div>

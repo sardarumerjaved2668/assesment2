@@ -211,7 +211,7 @@ export default function CheckoutPage() {
             <div className="relative shrink-0">
               <img src={item.product.imageUrl} alt={item.product.name}
                 className="w-12 h-12 rounded-xl object-cover bg-gray-100"
-                onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png'; }}
+                onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
               />
               <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-indigo-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
                 {item.quantity}
@@ -525,7 +525,7 @@ export default function CheckoutPage() {
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={item.product.imageUrl} alt={item.product.name}
                               className="w-12 h-12 rounded-xl object-cover bg-gray-100 shrink-0"
-                              onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png'; }} />
+                              onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }} />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-gray-900 truncate">{item.product.name}</p>
                               <p className="text-xs text-gray-400 mt-0.5">Qty {item.quantity} × ${item.priceAtPurchase.toFixed(2)}</p>

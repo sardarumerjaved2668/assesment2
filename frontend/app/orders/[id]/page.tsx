@@ -140,6 +140,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                             src={item.product.imageUrl}
                             alt={item.product.name}
                             className="w-14 h-14 rounded-xl object-cover bg-gray-100 flex-shrink-0"
+                            onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-gray-900 truncate">{item.product.name}</p>
