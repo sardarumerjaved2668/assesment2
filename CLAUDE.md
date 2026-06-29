@@ -33,8 +33,9 @@ company-test/
 - **Image upload (current approach)**: Images are uploaded to the **backend** via `POST /uploads/image` (Multer disk storage → `backend/uploads/`), which returns a public URL (`http://<host>/uploads/<file>`); only that URL is stored on the product. The folder is served statically via `app.useStaticAssets` in `main.ts`. The admin form also accepts a plain image **URL** as an alternative. (Cloudinary was the earlier approach and has been replaced — no third-party dependency now.)
 - **Mock payment**: Backend `POST /orders/checkout` runs a clearly-mocked payment (test card `4242 4242 4242 4242` succeeds, `4000 0000 0000 0002` declines). No real payment SDK. Swap `processMockPayment` for Stripe in production.
 - **Product suggestions**: `GET /products/:id/suggestions` returns same-category products; storefront shows a "You might also like" section.
-- **Admin access**: `JwtAuthGuard + RolesGuard + @Roles('admin')` on all write endpoints. Frontend `app/admin/layout.tsx` redirects non-admin users to login.
+- **Admin access**: `JwtAuthGuard + RolesGuard + @Roles('admin')` on all write endpoints. Unauthenticated → 401, wrong role → 403 (explicit `ForbiddenException` with role detail). Frontend `app/admin/layout.tsx` redirects non-admin users to `/auth/login`; renders `null` to prevent content flash.
 - **Auth with fallback**: `AuthContext` tries the real backend (`POST /auth/login`); if unreachable it falls back to mock users. JWT stored in sessionStorage. Mock tokens are prefixed `mock_` — every page uses `token.startsWith('mock_')` to decide real API vs. simulated behavior.
+- **Session restore**: On mount, `AuthContext` starts with `isLoading=true`, reads sessionStorage, and—for real JWTs—calls `GET /auth/me` to validate the token and refresh user data. Expired/invalid tokens are cleared. Mock tokens are trusted without a network call. `isLoading` becomes `false` only after restore, so the admin layout never redirects prematurely on page refresh.
 - **API client**: `frontend/lib/api.ts` — all backend calls go through typed `fetch` functions that accept a `token`. No axios.
 
 ## Backend Module Status
@@ -172,11 +173,5 @@ cd backend && npm run seed
 - `product detail page` — storefront product detail wired to real API
 - `orders pages` — orders history + detail
 - `cart functionality and other mistakes covered` — server-side cart, checkout/orders integration
-
-## Known Issues / Watch Out For
-- `next.config.mjs` must use JSDoc types (`/** @type */`), NOT `import type` syntax. Remote image hosts are whitelisted under `images.domains` (includes `localhost` for uploaded images).
-- TypeORM `synchronize: true` is fine for dev, must be `false` in production.
-- ObjectId is serialized to a hex string in JSON responses — frontend `Product.id` / `Order.id` are strings.
-- Auth token in sessionStorage (logged out on tab close — acceptable for assessment). Mock tokens start with `mock_`.
-- The backend must be **restarted** after backend code changes for new routes to load; confirm endpoints at `http://localhost:3001/api/docs`.
-- `backend/uploads/` holds uploaded images; only `.gitkeep` is tracked (binaries are git-ignored).
+- `order management and admin dashboard integration` — `GET /orders/stats` endpoint, admin dashboard + orders pages wired to real API, `OrderStatus.PROCESSING` added
+- `admin access control implementation` — fixed `AuthContext` session-res

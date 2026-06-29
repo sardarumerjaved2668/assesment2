@@ -7,7 +7,7 @@ import {
   Body,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CheckoutDto } from './dto/checkout.dto';
@@ -46,6 +46,9 @@ export class OrdersController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'Get dashboard stats (admin only): sales, orders by status, top products' })
+  @ApiResponse({ status: 200, description: 'Dashboard analytics data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT' })
+  @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
   getDashboardStats() {
     return this.ordersService.getDashboardStats();
   }
@@ -56,13 +59,4 @@ export class OrdersController {
     return user.role === 'admin'
       ? this.ordersService.findAll()
       : this.ordersService.findAllForUser(user.id);
-  }
-
-  @Get(':id')
-  @ApiOperation({ summary: 'Get an order by id' })
-  findOne(@CurrentUser() user: AuthUser, @Param('id') id: string) {
-    return this.ordersService.findOne(id, user.id, user.role === 'admin');
-  }
-
-  @Put(':id/status')
-  @UseGuards(RolesG
+  
