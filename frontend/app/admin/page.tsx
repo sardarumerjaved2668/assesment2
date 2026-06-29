@@ -1,25 +1,110 @@
 'use client';
 
-import { DASHBOARD_STATS, PRODUCTS } from '@/lib/dummy-data';
+import { useState, useEffect } from 'react';
 import StatsCard from '@/components/StatsCard';
+import { useAuthContext } from '@/context/AuthContext';
+import { fetchAdminDashboardStats, AdminDashboardStats } from '@/lib/api';
+import { DASHBOARD_STATS, PRODUCTS } from '@/lib/dummy-data';
 
 const STATUS_COLORS: Record<string, string> = {
   pending: '#F59E0B',
   processing: '#3B82F6',
   shipped: '#8B5CF6',
   delivered: '#10B981',
+  cancelled: '#EF4444',
 };
 
-export default function AdminDashboardPage() {
-  const stats = DASHBOARD_STATS;
-  const averageOrder = stats.totalSales / stats.totalOrders;
+// Normalised shape used in the UI
+interface TopProduct {
+  id: string;
+  name: string;
+  imageUrl: string;
+  category: string;
+  price: number;
+  sold: number;
+  revenue: number;
+}
 
+interface NormalisedStats {
+  totalSales: number;
+  totalOrders: number;
+  ordersByStatus: Record<string, number>;
+  topProducts: TopProduct[];
+}
+
+function normaliseDummyStats(): NormalisedStats {
+  const s = DASHBOARD_STATS;
+  return {
+    totalSales: s.totalSales,
+    totalOrders: s.totalOrders,
+    ordersByStatus: s.ordersByStatus,
+    topProducts: s.topProducts.map(({ product, sold }) => ({
+      id: product.id,
+      name: product.name,
+      imageUrl: product.imageUrl,
+      category: product.category,
+      price: product.price,
+      sold,
+      revenue: product.price * sold,
+    })),
+  };
+}
+
+function normaliseApiStats(data: AdminDashboardStats): NormalisedStats {
+  return {
+    totalSales: data.totalSales,
+    totalOrders: data.totalOrders,
+    ordersByStatus: data.ordersByStatus,
+    topProducts: data.topProducts.map((p) => ({
+      id: p.productId,
+      name: p.name,
+      imageUrl: p.imageUrl,
+      category: p.category,
+      price: p.price,
+      sold: p.sold,
+      revenue: p.revenue,
+    })),
+  };
+}
+
+export default function AdminDashboardPage() {
+  const { token } = useAuthContext();
+
+  const [stats, setStats] = useState<NormalisedStats>(normaliseDummyStats());
+  const [isLive, setIsLive] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!token) { setLoading(false); return; }
+
+    const isMock = token.startsWith('mock_');
+    if (isMock) { setLoading(false); return; }
+
+    fetchAdminDashboardStats(token)
+      .then((data) => {
+        setStats(normaliseApiStats(data));
+        setIsLive(true);
+      })
+      .catch(() => {
+        // keep dummy fallback silently
+      })
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const averageOrder = stats.totalOrders > 0 ? stats.totalSales / stats.totalOrders : 0;
   const statusEntries = Object.entries(stats.ordersByStatus);
-  const maxVal = Math.max(...statusEntries.map(([, v]) => v));
+  const maxVal = Math.max(...statusEntries.map(([, v]) => v), 1);
 
   return (
     <div className="p-6 lg:p-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        {!loading && (
+          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${isLive ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
+            {isLive ? '● Live data' : '● Demo data'}
+          </span>
+        )}
+      </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
@@ -55,7 +140,7 @@ export default function AdminDashboardPage() {
         />
         <StatsCard
           title="Products"
-          value={PRODUCTS.length.toString()}
+          value={isLive ? `${stats.topProducts.length}+` : PRODUCTS.length.toString()}
           subtitle="In catalog"
           icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,10 +178,13 @@ export default function AdminDashboardPage() {
           <div className="mt-6">
             <svg viewBox="0 0 320 120" className="w-full" role="img" aria-label="Orders by status bar chart">
               {statusEntries.map(([status, count], idx) => {
-                const barWidth = 48;
-                const gap = 20;
-                const x = idx * (barWidth + gap) + 20;
-                const barH = (count / maxVal) * 80;
+                const barWidth = 44;
+                const gap = 14;
+                const cols = statusEntries.length;
+                const totalW = cols * barWidth + (cols - 1) * gap;
+                const startX = (320 - totalW) / 2;
+                const x = startX + idx * (barWidth + gap);
+                const barH = Math.max(4, (count / maxVal) * 80);
                 const y = 90 - barH;
                 return (
                   <g key={status}>
@@ -113,67 +201,13 @@ export default function AdminDashboardPage() {
                       x={x + barWidth / 2}
                       y={108}
                       textAnchor="middle"
-                      className="text-xs"
                       fontSize="9"
                       fill="#6B7280"
                     >
-                      {status.slice(0, 4)}
+                      {status.slice(0, 5)}
                     </text>
                     <text
                       x={x + barWidth / 2}
                       y={y - 4}
                       textAnchor="middle"
-                      fontSize="9"
-                      fill="#374151"
-                      fontWeight="600"
-                    >
-                      {count}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-          </div>
-        </div>
-
-        {/* Top selling products */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-5">Top Selling Products</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left border-b border-gray-100">
-                  <th className="pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide w-8">#</th>
-                  <th className="pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Product</th>
-                  <th className="pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Units</th>
-                  <th className="pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Revenue</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {stats.topProducts.map(({ product, sold }, idx) => (
-                  <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="py-3 text-gray-400 font-medium">#{idx + 1}</td>
-                    <td className="py-3">
-                      <div className="flex items-center gap-2">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={product.imageUrl} alt={product.name} className="w-8 h-8 rounded object-cover bg-gray-100" />
-                        <div>
-                          <p className="font-medium text-gray-900 text-xs line-clamp-1">{product.name}</p>
-                          <p className="text-gray-400 text-xs">{product.category}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3 text-right font-semibold text-gray-700">{sold}</td>
-                    <td className="py-3 text-right font-bold text-gray-900">
-                      ${(product.price * sold).toLocaleString('en-US', { minimumFractionDigits: 0 })}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+          

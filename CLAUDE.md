@@ -45,7 +45,7 @@ company-test/
 | Products | ✅ Complete | Full CRUD, paginated list, suggestions, admin guards |
 | Uploads | ✅ Complete | `POST /uploads/image` (admin), Multer disk storage, static serving |
 | Cart | ✅ Complete | Per-user DB persistence, line totals + total |
-| Orders | ✅ Complete | Cart-based checkout, mock payment, history, status updates |
+| Orders | ✅ Complete | Cart-based checkout, mock payment, history, status updates, `GET /orders/stats` dashboard analytics |
 | Seed Script | ✅ Complete | admin@store.com / Admin123!, customer@store.com / Customer123! |
 
 ## Admin Product Management (assessment feature)
@@ -95,9 +95,10 @@ Validation via `class-validator` DTOs (name length, price ≥ 0.01, stock ≥ 0,
 |--------|----------|------|-------------|
 | POST | /orders/checkout | User | Convert cart → paid order (mock payment, stock decrement, clears cart) |
 | POST | /orders | User | Create an order from explicit items |
+| GET | /orders/stats | Admin JWT | Dashboard stats: totalSales, totalOrders, averageOrderValue, ordersByStatus, topProducts |
 | GET | /orders | User/Admin | Own orders (admins get all) |
 | GET | /orders/:id | User/Admin | One order (ownership enforced) |
-| PUT | /orders/:id/status | Admin | Update order status |
+| PUT | /orders/:id/status | Admin | Update order status (pending → processing → shipped → delivered, cancelled) |
 
 ## Frontend Page Status
 | Page | Status | Notes |
@@ -110,11 +111,11 @@ Validation via `class-validator` DTOs (name length, price ≥ 0.01, stock ≥ 0,
 | /orders/[id] | ✅ Complete | Real order detail |
 | /auth/login | ✅ Complete | Real backend login + mock fallback |
 | /auth/register | ✅ Complete | Registration |
-| /admin | ✅ Complete | Dashboard |
+| /admin | ✅ Complete | Dashboard — real API (`GET /orders/stats`), SVG bar chart, top products, dummy fallback |
 | /admin/products | ✅ Complete | Real API list, search, delete confirmation |
 | /admin/products/new | ✅ Complete | Real API, image upload + URL |
 | /admin/products/[id]/edit | ✅ Complete | Real API, image upload + URL |
-| /admin/orders | ✅ Complete | Orders + status updates |
+| /admin/orders | ✅ Complete | Real API orders (admin sees all), inline status updates via `PUT /orders/:id/status`, dummy fallback |
 
 ## Key Frontend Files
 | File | Purpose |

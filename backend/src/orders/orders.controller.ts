@@ -42,6 +42,14 @@ export class OrdersController {
     return this.ordersService.create(user.id, dto);
   }
 
+  @Get('stats')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Get dashboard stats (admin only): sales, orders by status, top products' })
+  getDashboardStats() {
+    return this.ordersService.getDashboardStats();
+  }
+
   @Get()
   @ApiOperation({ summary: "Get orders (own orders, or all for admins)" })
   findAll(@CurrentUser() user: AuthUser) {
@@ -57,13 +65,4 @@ export class OrdersController {
   }
 
   @Put(':id/status')
-  @UseGuards(RolesGuard)
-  @Roles('admin')
-  @ApiOperation({ summary: 'Update order status (admin only)' })
-  updateStatus(
-    @Param('id') id: string,
-    @Body('status') status: OrderStatus,
-  ) {
-    return this.ordersService.updateStatus(id, status);
-  }
-}
+  @UseGuards(RolesG

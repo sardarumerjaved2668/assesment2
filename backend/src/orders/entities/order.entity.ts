@@ -9,7 +9,7 @@ import { ObjectId } from 'mongodb';
 
 export enum OrderStatus {
   PENDING = 'pending',
-  CONFIRMED = 'confirmed',
+  PROCESSING = 'processing',
   SHIPPED = 'shipped',
   DELIVERED = 'delivered',
   CANCELLED = 'cancelled',
@@ -49,4 +49,3 @@ export class Order {
 
   @UpdateDateColumn()
   updatedAt: Date;
-}
