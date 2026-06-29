@@ -4,6 +4,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CATEGORIES } from '@/lib/dummy-data';
+import { useAuthContext } from '@/context/AuthContext';
+import { createProduct } from '@/lib/api';
+import ImageUpload from '@/components/ImageUpload';
 
 interface FormData {
   name: string;
@@ -27,6 +30,8 @@ const productCategories = CATEGORIES.filter((c) => c !== 'All');
 
 export default function NewProductPage() {
   const router = useRouter();
+  const { token } = useAuthContext();
+
   const [form, setForm] = useState<FormData>({
     name: '',
     description: '',
@@ -37,6 +42,8 @@ export default function NewProductPage() {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const update = (field: keyof FormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -48,11 +55,15 @@ export default function NewProductPage() {
     if (!form.name.trim()) newErrors.name = 'Name is required';
     if (!form.description.trim()) newErrors.description = 'Description is required';
     const priceNum = parseFloat(form.price);
-    if (!form.price || isNaN(priceNum) || priceNum <= 0) newErrors.price = 'Price must be greater than 0';
-    if (!form.imageUrl.trim()) newErrors.imageUrl = 'Image URL is required';
+    if (!form.price || isNaN(priceNum) || priceNum <= 0) {
+      newErrors.price = 'Price must be greater than 0';
+    }
+    if (!form.imageUrl.trim()) newErrors.imageUrl = 'Product image is required';
     if (!form.category) newErrors.category = 'Category is required';
     const stockNum = parseInt(form.stockQuantity);
-    if (form.stockQuantity === '' || isNaN(stockNum) || stockNum < 0) newErrors.stockQuantity = 'Stock quantity must be 0 or more';
+    if (form.stockQuantity === '' || isNaN(stockNum) || stockNum < 0) {
+      newErrors.stockQuantity = 'Stock quantity must be 0 or more';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -60,10 +71,36 @@ export default function NewProductPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 600));
-    setIsLoading(false);
-    router.push('/admin/products');
+    setApiError(null);
+
+    const payload = {
+      name: form.name.trim(),
+      description: form.description.trim(),
+      price: parseFloat(form.price),
+      imageUrl: form.imageUrl.trim(),
+      category: form.category,
+      stockQuantity: parseInt(form.stockQuantity),
+    };
+
+    try {
+      if (token && !token.startsWith('mock_')) {
+        // Real API call
+        const created = await createProduct(payload, token);
+        setSuccessMsg(`"${created.name}" created successfully!`);
+        setTimeout(() => router.push('/admin/products'), 1200);
+      } else {
+        // Mock — backend not running or mock token
+        await new Promise((r) => setTimeout(r, 600));
+        setSuccessMsg(`"${payload.name}" created (demo mode — not saved to DB)`);
+        setTimeout(() => router.push('/admin/products'), 1200);
+      }
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : 'Failed to create product. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -82,8 +119,24 @@ export default function NewProductPage() {
       </div>
 
       <div className="max-w-2xl">
+        {successMsg && (
+          <div className="mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 flex items-center gap-2">
+            <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            {successMsg}
+          </div>
+        )}
+
+        {apiError && (
+          <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            {apiError}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="space-y-5">
+            {/* Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
               <input
@@ -96,6 +149,7 @@ export default function NewProductPage() {
               {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
             </div>
 
+            {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
               <textarea
@@ -108,6 +162,7 @@ export default function NewProductPage() {
               {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description}</p>}
             </div>
 
+            {/* Price + Stock */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Price ($) *</label>
@@ -122,7 +177,6 @@ export default function NewProductPage() {
                 />
                 {errors.price && <p className="text-xs text-red-500 mt-1">{errors.price}</p>}
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity *</label>
                 <input
@@ -138,6 +192,7 @@ export default function NewProductPage() {
               </div>
             </div>
 
+            {/* Category */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
               <select
@@ -152,23 +207,12 @@ export default function NewProductPage() {
               {errors.category && <p className="text-xs text-red-500 mt-1">{errors.category}</p>}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Image URL *</label>
-              <input
-                type="url"
-                value={form.imageUrl}
-                onChange={(e) => update('imageUrl', e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.imageUrl ? 'border-red-300' : 'border-gray-300'}`}
-              />
-              {errors.imageUrl && <p className="text-xs text-red-500 mt-1">{errors.imageUrl}</p>}
-              {form.imageUrl && (
-                <div className="mt-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={form.imageUrl} alt="Preview" className="w-24 h-24 object-cover rounded-lg border border-gray-200" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                </div>
-              )}
-            </div>
+            {/* Image Upload */}
+            <ImageUpload
+              currentUrl={form.imageUrl}
+              onUrlChange={(url) => update('imageUrl', url)}
+              error={errors.imageUrl}
+            />
           </div>
 
           <div className="flex gap-3 mt-6 pt-5 border-t border-gray-100">
@@ -189,7 +233,7 @@ export default function NewProductPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  Saving...
+                  Creating...
                 </>
               ) : 'Create Product'}
             </button>

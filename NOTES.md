@@ -48,8 +48,12 @@
 
 ## Assumptions & Decisions
 
-### Product Images
-Used URL strings instead of file uploads. Reason: file uploads require S3 or local disk storage, adding significant complexity for no assessment benefit. URLs are simpler and documented here.
+### Product Images — Cloudinary Unsigned Upload
+**Decision**: Cloudinary free tier, unsigned upload directly from the browser.
+**How it works**: The admin selects a file → browser POSTs directly to Cloudinary's API → gets back a `secure_url` → that URL is sent to the backend when saving the product. The backend never touches the file — it only stores the URL string in PostgreSQL.
+**Why unsigned**: Unsigned presets are designed to be public. No secret is exposed. The `upload_preset` name is intentionally public. Signed uploads would require a backend proxy (to protect the API key), adding unnecessary complexity.
+**Fallback**: If `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` and `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` are not set in `.env.local`, the image field renders as a plain URL text input. The app is fully functional without Cloudinary — useful for development without setup.
+**Future**: Could switch to signed uploads (backend generates signature) without changing the stored URL format.
 
 ### Payment
 Used a mock Stripe-style card form in test mode. No real payment SDK. The UI shows "4242 4242 4242 4242" as the test card number. Reason: assessment explicitly permits mocked payment.
@@ -75,26 +79,29 @@ Backend: `RolesGuard` + `@Roles('admin')` decorator pattern ready for all admin 
 ## Trade-offs & Scope
 
 ### Built Fully
-- Complete frontend UI/UX: all 14 pages, 13 components, full dummy data
+- Complete frontend UI/UX: all 14 pages, 14 components, full dummy data with real API fallback
 - Backend auth module: register, login, JWT, guards, decorators, strategies
+- Backend Products module: full CRUD, paginated query builder, suggestions endpoint, admin guards
 - Backend entity schema: User, Product, Order, OrderItem, CartItem (ready for future modules)
+- `lib/api.ts` typed fetch client — all backend calls centralised, token-aware
+- `components/ImageUpload.tsx` — Cloudinary drag-drop upload with URL fallback
+- `context/AuthContext.tsx` — real backend login with mock fallback, JWT in sessionStorage
 - Seed script (idempotent, standalone)
 - E2E tests for auth (9 test cases)
-- CLAUDE.md for future session context
+- CLAUDE.md updated every session as handoff document
 
 ### Mocked / Simplified
-- Frontend uses dummy data (no real API calls) — swap `lib/dummy-data.ts` imports with fetch calls
+- Storefront (catalog, product detail) still uses dummy data — backend Products API is ready but frontend hasn't been re-wired yet (next step)
 - Payment is a UI mock — no real Stripe SDK
 - Cart in localStorage only — server-side cart entity is ready but endpoint not implemented
-- Auth context doesn't persist across page refresh (no real JWT token storage yet)
+- Auth register page still mocks registration (backend register endpoint exists, frontend not wired)
+- Orders fully mocked — Orders module stub exists, entity ready
 
 ### What I'd Do With More Time
-1. Implement Products module (CRUD with stock validation on add-to-cart)
+1. Wire storefront catalog to real Products API (`fetchProducts` in `lib/api.ts`)
 2. Implement Cart module (server-side, user-scoped)
-3. Implement Orders module (checkout creates order, decrements stock, status lifecycle)
-4. Wire frontend API calls (replace dummy data with real fetch/axios calls)
-5. Add image upload via S3 presigned URLs (or keep URL strings with a note)
-6. Add unit tests for auth service and orders service
-7. Improve error UX: show inline validation errors on forms
-8. Dockerize: `docker-compose.yml` with postgres + backend + frontend
-9. Deploy frontend to Vercel, backend to Railway or Render
+3. Implement Orders module (checkout creates order, decrements stock atomically, status lifecycle)
+4. Wire order history and checkout to real API
+5. Unit tests for ProductsService (stock decrement edge cases)
+6. Dockerize: `docker-compose.yml` with postgres + backend + frontend
+7. Deploy frontend to Vercel, backend to Railway or Render
