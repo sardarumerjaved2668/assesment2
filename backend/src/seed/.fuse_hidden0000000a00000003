@@ -15,6 +15,7 @@ const AppDataSource = new DataSource({
   database: process.env.DATABASE_NAME || 'fullstack',
   entities: [User, Product, Order, OrderItem, CartItem],
   synchronize: true,
+  useUnifiedTopology: true,
 });
 
 const products = [

@@ -138,7 +138,41 @@ export async function deleteProduct(
   return handleResponse<{ message: string }>(res);
 }
 
-// ─── Cloudinary Image Upload ──────────────────────────────────────────────────
+// ─── Backend Image Upload ───────────────────────────────────────────────────
+
+export interface UploadImageResult {
+  url: string;
+  filename: string;
+  size: number;
+  mimetype: string;
+}
+
+/**
+ * Upload an image file to the backend. The backend stores it in its /uploads
+ * folder and returns the public URL to save on the product.
+ * Requires an admin token.
+ */
+export async function uploadProductImage(
+  file: File,
+  token: string,
+): Promise<UploadImageResult> {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  const headers: HeadersInit = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  // NOTE: do NOT set Content-Type — the browser sets the multipart boundary.
+
+  const res = await fetch(`${API_URL}/uploads/image`, {
+    method: 'POST',
+    headers,
+    body: formData,
+    signal: AbortSignal.timeout(30000),
+  });
+  return handleResponse<UploadImageResult>(res);
+}
+
+// ─── Cloudinary Image Upload (legacy, unused) ──────────────────────────────────
 
 export interface CloudinaryUploadResult {
   secure_url: string;

@@ -267,6 +267,7 @@ export default function EditProductPage({ params }: PageProps) {
                 currentUrl={form.imageUrl}
                 onUrlChange={(url) => update('imageUrl', url)}
                 error={errors.imageUrl}
+                token={token}
               />
             </div>
           )}

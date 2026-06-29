@@ -7,30 +7,20 @@ import {
 } from 'typeorm';
 import { ObjectId } from 'mongodb';
 
-export enum UserRole {
-  CUSTOMER = 'customer',
-  ADMIN = 'admin',
-}
-
-@Entity('users')
-export class User {
+@Entity('cart_items')
+export class CartItem {
   @ObjectIdColumn()
   id: ObjectId;
 
-  @Column({ unique: true })
-  email: string;
+  // Reference ids (stored as id strings — MongoDB has no SQL joins).
+  @Column()
+  userId: string;
 
   @Column()
-  password: string;
+  productId: string;
 
-  @Column()
-  firstName: string;
-
-  @Column()
-  lastName: string;
-
-  @Column({ default: UserRole.CUSTOMER })
-  role: UserRole;
+  @Column({ default: 1 })
+  quantity: number;
 
   @CreateDateColumn()
   createdAt: Date;

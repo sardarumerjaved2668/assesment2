@@ -146,10 +146,12 @@ export class ProductsService {
   async update(id: string, dto: UpdateProductDto): Promise<Product> {
     const product = await this.findOne(id);
 
+    // Validate price if provided
     if (dto.price !== undefined && dto.price <= 0) {
       throw new BadRequestException('Price must be greater than 0');
     }
 
+    // Validate stock if provided
     if (dto.stockQuantity !== undefined && dto.stockQuantity < 0) {
       throw new BadRequestException('Stock quantity cannot be negative');
     }

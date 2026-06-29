@@ -1,26 +1,29 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { uploadImageToCloudinary } from '@/lib/api';
+import { uploadProductImage } from '@/lib/api';
 
 interface ImageUploadProps {
   currentUrl: string;
   onUrlChange: (url: string) => void;
   error?: string;
+  /** Admin token — required to upload to the backend. */
+  token?: string | null;
 }
 
-const isCloudinaryConfigured =
-  !!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME &&
-  !!process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-
-export default function ImageUpload({ currentUrl, onUrlChange, error }: ImageUploadProps) {
+export default function ImageUpload({
+  currentUrl,
+  onUrlChange,
+  error,
+  token,
+}: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
-  const [tab, setTab] = useState<'upload' | 'url'>(
-    isCloudinaryConfigured ? 'upload' : 'url',
-  );
+  const [tab, setTab] = useState<'upload' | 'url'>('upload');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isDemo = !token || token.startsWith('mock_');
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -28,15 +31,22 @@ export default function ImageUpload({ currentUrl, onUrlChange, error }: ImageUpl
         setUploadError('Please select an image file (JPG, PNG, WebP, etc.)');
         return;
       }
-      if (file.size > 10 * 1024 * 1024) {
-        setUploadError('Image must be smaller than 10MB');
+      if (file.size > 5 * 1024 * 1024) {
+        setUploadError('Image must be smaller than 5MB');
         return;
       }
       setUploadError(null);
+
+      // Demo mode (no real backend session): preview locally without saving.
+      if (isDemo) {
+        onUrlChange(URL.createObjectURL(file));
+        return;
+      }
+
       setUploading(true);
       try {
-        const result = await uploadImageToCloudinary(file);
-        onUrlChange(result.secure_url);
+        const result = await uploadProductImage(file, token as string);
+        onUrlChange(result.url);
       } catch (err) {
         setUploadError(
           err instanceof Error ? err.message : 'Upload failed. Please try again.',
@@ -45,7 +55,7 @@ export default function ImageUpload({ currentUrl, onUrlChange, error }: ImageUpl
         setUploading(false);
       }
     },
-    [onUrlChange],
+    [onUrlChange, isDemo, token],
   );
 
   const handleDrop = useCallback(
@@ -61,7 +71,7 @@ export default function ImageUpload({ currentUrl, onUrlChange, error }: ImageUpl
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleFile(file);
-    // reset so same file can be re-selected
+    // reset so the same file can be re-selected
     e.target.value = '';
   };
 
@@ -71,40 +81,41 @@ export default function ImageUpload({ currentUrl, onUrlChange, error }: ImageUpl
         Product Image *
       </label>
 
-      {/* Tab switcher — only shown when Cloudinary is configured */}
-      {isCloudinaryConfigured && (
-        <div className="flex gap-1 mb-3 bg-gray-100 p-1 rounded-lg w-fit">
-          <button
-            type="button"
-            onClick={() => setTab('upload')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              tab === 'upload'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Upload File
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('url')}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-              tab === 'url'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Enter URL
-          </button>
-        </div>
-      )}
+      {/* Tab switcher: upload a file or paste a URL */}
+      <div className="flex gap-1 mb-3 bg-gray-100 p-1 rounded-lg w-fit">
+        <button
+          type="button"
+          onClick={() => setTab('upload')}
+          className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            tab === 'upload'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Upload Image
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab('url')}
+          className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            tab === 'url'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Enter URL
+        </button>
+      </div>
 
       {/* Upload zone */}
       {tab === 'upload' && (
         <div>
           <div
             onClick={() => fileInputRef.current?.click()}
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
             className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
@@ -129,7 +140,7 @@ export default function ImageUpload({ currentUrl, onUrlChange, error }: ImageUpl
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                <p className="text-sm text-indigo-600 font-medium">Uploading to Cloudinary...</p>
+                <p className="text-sm text-indigo-600 font-medium">Uploading...</p>
               </div>
             ) : currentUrl && !uploadError ? (
               <div className="flex flex-col items-center gap-2">
@@ -138,9 +149,11 @@ export default function ImageUpload({ currentUrl, onUrlChange, error }: ImageUpl
                   src={currentUrl}
                   alt="Preview"
                   className="w-24 h-24 object-cover rounded-lg border border-gray-200 mx-auto"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
                 />
-                <p className="text-xs text-green-600 font-medium">✓ Image uploaded</p>
+                <p className="text-xs text-green-600 font-medium">✓ Image selected</p>
                 <p className="text-xs text-gray-400">Click or drag to replace</p>
               </div>
             ) : (
@@ -154,7 +167,7 @@ export default function ImageUpload({ currentUrl, onUrlChange, error }: ImageUpl
                   <p className="text-sm font-medium text-gray-700">
                     Drop an image here, or <span className="text-indigo-600">browse</span>
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">JPG, PNG, WebP up to 10MB</p>
+                  <p className="text-xs text-gray-400 mt-0.5">JPG, PNG, WebP up to 5MB</p>
                 </div>
               </div>
             )}
@@ -164,12 +177,12 @@ export default function ImageUpload({ currentUrl, onUrlChange, error }: ImageUpl
             <p className="text-xs text-red-500 mt-1">{uploadError || error}</p>
           )}
 
-          {!isCloudinaryConfigured && (
+          {isDemo && (
             <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
-              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
-              Cloudinary not configured — set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET in .env.local
+              Demo mode — sign in as admin with the backend running to save the image to the server.
             </p>
           )}
         </div>
@@ -195,7 +208,9 @@ export default function ImageUpload({ currentUrl, onUrlChange, error }: ImageUpl
                 src={currentUrl}
                 alt="Preview"
                 className="w-20 h-20 object-cover rounded-lg border border-gray-200"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
               />
             </div>
           )}

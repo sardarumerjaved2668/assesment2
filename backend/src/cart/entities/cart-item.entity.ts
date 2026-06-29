@@ -1,35 +1,25 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
+  ObjectIdColumn,
   Column,
-  ManyToOne,
-  JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
-import { Product } from '../../products/entities/product.entity';
+import { ObjectId } from 'mongodb';
 
 @Entity('cart_items')
 export class CartItem {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @ObjectIdColumn()
+  id: ObjectId;
 
-  @ManyToOne(() => User, (user) => user.cartItems, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
-  user: User;
-
+  // Reference ids (stored as id strings  MongoDB has no SQL joins).
   @Column()
   userId: string;
-
-  @ManyToOne(() => Product, (product) => product.cartItems, { eager: true })
-  @JoinColumn({ name: 'productId' })
-  product: Product;
 
   @Column()
   productId: string;
 
-  @Column({ type: 'int', default: 1 })
+  @Column({ default: 1 })
   quantity: number;
 
   @CreateDateColumn()

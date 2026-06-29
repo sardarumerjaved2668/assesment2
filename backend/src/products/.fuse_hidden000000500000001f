@@ -30,7 +30,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
-  //  Public endpoints 
+  // ─── Public endpoints ────────────────────────────────────────────────────────
 
   @Get()
   @ApiOperation({ summary: 'Get all products (paginated, filterable)' })
@@ -70,7 +70,7 @@ export class ProductsController {
     return this.productsService.findByCategory(product.category, id);
   }
 
-  //  Admin-only endpoints 
+  // ─── Admin-only endpoints ────────────────────────────────────────────────────
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -80,7 +80,7 @@ export class ProductsController {
   @ApiResponse({ status: 201, description: 'Product created' })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden  admin only' })
+  @ApiResponse({ status: 403, description: 'Forbidden — admin only' })
   create(@Body() createProductDto: CreateProductDto) {
     return this.productsService.create(createProductDto);
   }

@@ -212,6 +212,7 @@ export default function NewProductPage() {
               currentUrl={form.imageUrl}
               onUrlChange={(url) => update('imageUrl', url)}
               error={errors.imageUrl}
+              token={token}
             />
           </div>
 
