@@ -5,21 +5,69 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useRef, useEffect, Suspense } from 'react';
 import { useCartContext } from '@/context/CartContext';
 import { useAuthContext } from '@/context/AuthContext';
+import { useNotifications, AppNotification } from '@/context/NotificationsContext';
+
+const NOTIF_ICONS: Record<AppNotification['type'], React.ReactNode> = {
+  order_placed: (
+    <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center shrink-0">
+      <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </div>
+  ),
+  order_status: (
+    <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center shrink-0">
+      <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+      </svg>
+    </div>
+  ),
+  welcome: (
+    <div className="w-8 h-8 bg-violet-100 rounded-full flex items-center justify-center shrink-0">
+      <svg className="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h3m10.5 4a2 2 0 010-4h-3" />
+      </svg>
+    </div>
+  ),
+  admin_new_order: (
+    <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center shrink-0">
+      <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+      </svg>
+    </div>
+  ),
+};
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60_000);
+  if (m < 1)  return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
 
 function NavbarInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { cartCount } = useCartContext();
   const { user, logout } = useAuthContext();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState(searchParams.get('q') ?? '');
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications();
+  const [menuOpen, setMenuOpen]         = useState(false);
+  const [notifOpen, setNotifOpen]       = useState(false);
+  const [searchValue, setSearchValue]   = useState(searchParams.get('q') ?? '');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const menuRef  = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -91,6 +139,107 @@ function NavbarInner() {
                 )}
               </Link>
 
+              {/* Notifications bell */}
+              {user && (
+                <div className="relative" ref={notifRef}>
+                  <button
+                    onClick={() => { setNotifOpen(!notifOpen); setMenuOpen(false); }}
+                    className="relative p-2.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
+                    aria-label="Notifications"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[1.1rem] px-0.5 flex items-center justify-center leading-none h-4 animate-pulse">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {notifOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+                      {/* Header */}
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-bold text-gray-900">Notifications</h3>
+                          {unreadCount > 0 && (
+                            <span className="px-1.5 py-0.5 bg-indigo-600 text-white text-[10px] font-bold rounded-full">
+                              {unreadCount}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {unreadCount > 0 && (
+                            <button onClick={markAllAsRead}
+                              className="text-xs text-indigo-600 hover:text-indigo-700 font-medium px-2 py-1 rounded-lg hover:bg-indigo-50 transition-colors">
+                              Mark all read
+                            </button>
+                          )}
+                          {notifications.length > 0 && (
+                            <button onClick={clearAll}
+                              className="text-xs text-gray-400 hover:text-red-500 font-medium px-2 py-1 rounded-lg hover:bg-red-50 transition-colors">
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* List */}
+                      <div className="max-h-80 overflow-y-auto">
+                        {notifications.length === 0 ? (
+                          <div className="text-center py-10 px-4">
+                            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                              </svg>
+                            </div>
+                            <p className="text-sm text-gray-400">No notifications yet</p>
+                          </div>
+                        ) : (
+                          notifications.map((n) => (
+                            <button key={n.id}
+                              onClick={() => {
+                                markAsRead(n.id);
+                                if (n.orderId) {
+                                  router.push(user.role === 'admin' ? `/admin/orders` : `/orders/${n.orderId}`);
+                                  setNotifOpen(false);
+                                }
+                              }}
+                              className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-b-0 ${!n.isRead ? 'bg-indigo-50/40' : ''}`}
+                            >
+                              {NOTIF_ICONS[n.type]}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className={`text-xs font-semibold ${n.isRead ? 'text-gray-700' : 'text-gray-900'} leading-snug`}>
+                                    {n.title}
+                                  </p>
+                                  {!n.isRead && (
+                                    <span className="w-2 h-2 bg-indigo-600 rounded-full shrink-0 mt-0.5" />
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-500 mt-0.5 leading-snug">{n.message}</p>
+                                <p className="text-[10px] text-gray-400 mt-1">{timeAgo(n.createdAt)}</p>
+                              </div>
+                            </button>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Footer */}
+                      {notifications.length > 0 && (
+                        <div className="border-t border-gray-100 px-4 py-2.5">
+                          <Link href="/orders" onClick={() => setNotifOpen(false)}
+                            className="text-xs text-indigo-600 font-medium hover:text-indigo-700">
+                            View all orders →
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Admin link */}
               {user?.role === 'admin' && (
                 <Link
@@ -109,7 +258,7 @@ function NavbarInner() {
               {user ? (
                 <div className="relative" ref={menuRef}>
                   <button
-                    onClick={() => setMenuOpen(!menuOpen)}
+                    onClick={() => { setMenuOpen(!menuOpen); setNotifOpen(false); }}
                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-gray-100 transition-colors text-sm font-medium text-gray-700"
                   >
                     <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
