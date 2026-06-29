@@ -6,6 +6,7 @@ import { Product } from '../products/entities/product.entity';
 import { Order } from '../orders/entities/order.entity';
 import { OrderItem } from '../orders/entities/order-item.entity';
 import { CartItem } from '../cart/entities/cart-item.entity';
+import { Category } from '../categories/entities/category.entity';
 
 dotenv.config();
 
@@ -13,7 +14,7 @@ const AppDataSource = new DataSource({
   type: 'mongodb',
   url: process.env.MONGODB_URI,
   database: process.env.DATABASE_NAME || 'fullstack',
-  entities: [User, Product, Order, OrderItem, CartItem],
+  entities: [User, Product, Order, OrderItem, CartItem, Category],
   synchronize: true,
 });
 
@@ -116,6 +117,15 @@ const products = [
   },
 ];
 
+const seedCategories = [
+  { name: 'Electronics', description: 'Electronic devices and accessories', slug: 'electronics' },
+  { name: 'Clothing', description: 'Apparel and fashion items', slug: 'clothing' },
+  { name: 'Books', description: 'Books, e-books and educational materials', slug: 'books' },
+  { name: 'Home & Garden', description: 'Home decor, furniture and garden supplies', slug: 'home-garden' },
+  { name: 'Sports', description: 'Sports equipment and activewear', slug: 'sports' },
+  { name: 'Toys', description: 'Toys, games and kids accessories', slug: 'toys' },
+];
+
 async function seed() {
   console.log('Connecting to database...');
   await AppDataSource.initialize();
@@ -123,6 +133,7 @@ async function seed() {
 
   const userRepo = AppDataSource.getRepository(User);
   const productRepo = AppDataSource.getRepository(Product);
+  const categoryRepo = AppDataSource.getRepository(Category);
 
   // Upsert admin user
   const adminEmail = 'admin@store.com';
@@ -156,30 +167,4 @@ async function seed() {
     });
     await userRepo.save(customer);
     console.log('Customer user created:', customerEmail);
-  } else {
-    console.log('Customer user already exists:', customerEmail);
   }
-
-  // Upsert products
-  for (const productData of products) {
-    const existing = await productRepo.findOne({
-      where: { name: productData.name },
-    });
-    if (!existing) {
-      const product = productRepo.create(productData);
-      await productRepo.save(product);
-      console.log('Product created:', productData.name);
-    } else {
-      await productRepo.save({ ...existing, ...productData });
-      console.log('Product updated:', productData.name);
-    }
-  }
-
-  console.log('Seed completed successfully.');
-  await AppDataSource.destroy();
-}
-
-seed().catch((err) => {
-  console.error('Seed failed:', err);
-  process.exit(1);
-});

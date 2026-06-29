@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CATEGORIES } from '@/lib/dummy-data';
+import { Category } from '@/lib/types';
 import { useAuthContext } from '@/context/AuthContext';
-import { createProduct } from '@/lib/api';
+import { createProduct, fetchCategories } from '@/lib/api';
 import ImageUpload from '@/components/ImageUpload';
 
 interface FormData {
@@ -26,24 +27,43 @@ interface FormErrors {
   stockQuantity?: string;
 }
 
-const productCategories = CATEGORIES.filter((c) => c !== 'All');
+const FALLBACK_CATEGORIES = CATEGORIES.filter((c) => c !== 'All');
 
 export default function NewProductPage() {
   const router = useRouter();
   const { token } = useAuthContext();
+
+  const [apiCategories, setApiCategories] = useState<Category[]>([]);
+  const categoryOptions = apiCategories.length > 0
+    ? apiCategories.map((c) => c.name)
+    : FALLBACK_CATEGORIES;
 
   const [form, setForm] = useState<FormData>({
     name: '',
     description: '',
     price: '',
     imageUrl: '',
-    category: productCategories[0],
+    category: '',
     stockQuantity: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchCategories({ isActive: true })
+      .then((data) => {
+        setApiCategories(data);
+        if (data.length > 0) {
+          setForm((prev) => ({ ...prev, category: prev.category || data[0].name }));
+        }
+      })
+      .catch(() => {
+        // fallback — already using FALLBACK_CATEGORIES
+        setForm((prev) => ({ ...prev, category: prev.category || FALLBACK_CATEGORIES[0] || '' }));
+      });
+  }, []);
 
   const update = (field: keyof FormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -177,7 +197,8 @@ export default function NewProductPage() {
                     onChange={(e) => update('category', e.target.value)}
                     className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white ${errors.category ? 'border-red-300' : 'border-gray-200'}`}
                   >
-                    {productCategories.map((cat) => (
+                    <option value="">Select a category</option>
+                    {categoryOptions.map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </select>

@@ -63,3 +63,14 @@ export interface FilterState {
   priceMax: number;
   sortBy: 'price-asc' | 'price-desc' | 'newest';
 }
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  imageUrl?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

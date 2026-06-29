@@ -4,7 +4,7 @@
  * Falls back gracefully when the backend is unreachable.
  */
 
-import { Product, Order, ShippingAddress } from './types';
+import { Product, Order, ShippingAddress, Category } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -406,3 +406,98 @@ export async function updateOrderStatus(
   });
   return handleResponse<Order>(res);
 }
+
+// ─── Admin Dashboard Stats ──────────────────────────────────────────────────
+
+export interface AdminDashboardStats {
+  totalSales: number;
+  totalOrders: number;
+  averageOrderValue: number;
+  ordersByStatus: Record<string, number>;
+  topProducts: {
+    productId: string;
+    name: string;
+    imageUrl: string;
+    category: string;
+    price: number;
+    sold: number;
+    revenue: number;
+  }[];
+}
+
+export async function fetchAdminDashboardStats(
+  token: string,
+): Promise<AdminDashboardStats> {
+  const res = await fetch(`${API_URL}/orders/stats`, {
+    headers: authHeaders(token),
+    signal: AbortSignal.timeout(8000),
+  });
+  return handleResponse<AdminDashboardStats>(res);
+}
+
+// ─── Categories API ──────────────────────────────────────────────────────────
+
+export interface CategoriesQueryParams {
+  search?: string;
+  isActive?: boolean;
+}
+
+/** Get all categories (public). */
+export async function fetchCategories(
+  params: CategoriesQueryParams = {},
+): Promise<Category[]> {
+  const query = new URLSearchParams();
+  if (params.search) query.set('search', params.search);
+  if (params.isActive !== undefined) query.set('isActive', String(params.isActive));
+
+  const res = await fetch(`${API_URL}/categories?${query.toString()}`, {
+    headers: { 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(8000),
+  });
+  return handleResponse<Category[]>(res);
+}
+
+/** Get a single category by id (public). */
+export async function fetchCategory(id: string): Promise<Category> {
+  const res = await fetch(`${API_URL}/categories/${id}`, {
+    signal: AbortSignal.timeout(8000),
+  });
+  return handleResponse<Category>(res);
+}
+
+/** Create a category (admin only). */
+export async function createCategory(
+  data: Partial<Category>,
+  token: string,
+): Promise<Category> {
+  const res = await fetch(`${API_URL}/categories`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+    signal: AbortSignal.timeout(10000),
+  });
+  return handleResponse<Category>(res);
+}
+
+/** Update a category (admin only). */
+export async function updateCategory(
+  id: string,
+  data: Partial<Category>,
+  token: string,
+): Promise<Category> {
+  const res = await fetch(`${API_URL}/categories/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+    signal: AbortSignal.timeout(10000),
+  });
+  return handleResponse<Category>(res);
+}
+
+/** Delete a category (admin only). */
+export async function deleteCategory(
+  id: string,
+  token: string,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/categories/${id}`, {
+    method: 'DELETE'

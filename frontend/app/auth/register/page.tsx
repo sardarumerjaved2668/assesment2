@@ -93,27 +93,51 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-900 via-indigo-950 to-violet-950 flex-col justify-center px-16 text-white relative overflow-hidden">
-        <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full border-[40px] border-violet-700/30 pointer-events-none" />
-        <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full border-[30px] border-indigo-700/20 pointer-events-none" />
-        <div className="relative z-10">
-          <Link href="/" className="font-black text-3xl bg-gradient-to-r from-violet-300 to-indigo-300 bg-clip-text text-transparent tracking-tight">
-            ShopNext
-          </Link>
-          <p className="text-indigo-200 mt-3 text-lg font-light">Your premium shopping destination</p>
-          <div className="mt-12 space-y-6">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-900 via-indigo-950 to-violet-950 flex-col justify-between px-16 py-14 text-white relative overflow-hidden">
+        {/* Brand */}
+        <Link href="/" className="font-black text-3xl bg-gradient-to-r from-violet-300 to-indigo-300 bg-clip-text text-transparent tracking-tight">
+          ShopNext
+        </Link>
+
+        {/* Product showcase */}
+        <div className="flex-1 flex items-center justify-center py-10">
+          <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
             {[
-              'Free shipping on orders $100+',
-              '30-day easy returns',
-              'Secure & encrypted payments',
-            ].map((feature) => (
-              <div key={feature} className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-full bg-indigo-500/30 flex items-center justify-center shrink-0">
-                  <svg className="w-3.5 h-3.5 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                  </svg>
+              { emoji: '💻', name: 'Electronics', price: '$299', color: 'from-indigo-500/20 to-blue-500/20', border: 'border-indigo-500/30' },
+              { emoji: '👗', name: 'Clothing', price: '$49', color: 'from-violet-500/20 to-pink-500/20', border: 'border-violet-500/30' },
+              { emoji: '📚', name: 'Books', price: '$19', color: 'from-amber-500/20 to-orange-500/20', border: 'border-amber-500/30' },
+              { emoji: '🏡', name: 'Home & Garden', price: '$89', color: 'from-emerald-500/20 to-teal-500/20', border: 'border-emerald-500/30' },
+            ].map((item) => (
+              <div key={item.name} className={`bg-gradient-to-br ${item.color} border ${item.border} rounded-2xl p-4 backdrop-blur-sm`}>
+                <div className="text-3xl mb-2">{item.emoji}</div>
+                <p className="text-white font-semibold text-sm">{item.name}</p>
+                <p className="text-white/60 text-xs mt-0.5">From {item.price}</p>
+                <div className="mt-2 flex gap-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <svg key={i} className="w-2.5 h-2.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
                 </div>
-                <span className="text-sm text-indigo-100 font-medium">{feature}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Features */}
+        <div>
+          <p className="text-indigo-200 text-lg font-light mb-6">Join thousands of happy shoppers</p>
+          <div className="space-y-4">
+            {[
+              { icon: '🚚', text: 'Free shipping on orders $100+' },
+              { icon: '↩️', text: '30-day easy returns' },
+              { icon: '🔒', text: 'Secure & encrypted payments' },
+            ].map((feature) => (
+              <div key={feature.text} className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-base shrink-0">
+                  {feature.icon}
+                </div>
+                <span className="text-sm text-indigo-100 font-medium">{feature.text}</span>
               </div>
             ))}
           </div>
@@ -173,39 +197,4 @@ export default function RegisterPage() {
                       onChange={(e) => update(key, e.target.value)}
                       placeholder={field.placeholder}
                       autoComplete={key === 'email' ? 'email' : key === 'password' ? 'new-password' : 'new-password'}
-                      className={`w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${errors[key] ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
-                    />
-                    {errors[key] && <p className="text-xs text-red-500 mt-1">{errors[key]}</p>}
-                  </div>
-                );
-              })}
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-semibold text-sm hover:from-indigo-700 hover:to-violet-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 mt-2"
-              >
-                {isLoading ? (
-                  <>
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Creating account...
-                  </>
-                ) : 'Create Account'}
-              </button>
-            </form>
-
-            <p className="text-sm text-gray-500 text-center mt-6">
-              {'Already have an account? '}
-              <Link href="/auth/login" className="text-indigo-600 font-semibold hover:underline">
-                Sign in
-              </Link>
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+                      className={`w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${errors[key] ? 'border

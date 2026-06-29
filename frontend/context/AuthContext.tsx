@@ -120,4 +120,75 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(accessToken);
         try {
           sessionStorage.setItem('auth_token', accessToken);
-         
+          sessionStorage.setItem('auth_user', JSON.stringify(userData));
+        } catch {
+          // sessionStorage unavailable — continue anyway
+        }
+        setIsLoading(false);
+        return { success: true };
+      }
+
+      // Backend returned an error response (wrong credentials, etc.)
+      let errorMsg = 'Invalid email or password.';
+      try {
+        const body = await res.json();
+        errorMsg = Array.isArray(body.message)
+          ? body.message.join(', ')
+          : body.message || errorMsg;
+      } catch {
+        // ignore parse error
+      }
+      setIsLoading(false);
+      return { success: false, error: errorMsg };
+    } catch {
+      // Backend unreachable — fall back to mock users
+    }
+
+    // Mock fallback
+    const mockUser = MOCK_USERS.find(
+      (u) => u.email === email && u.password === password,
+    );
+
+    if (mockUser) {
+      const { password: _pw, ...userData } = mockUser;
+      void _pw;
+      const mockToken = `mock_${userData.role}_${Date.now()}`;
+      setUser(userData);
+      setToken(mockToken);
+      try {
+        sessionStorage.setItem('auth_token', mockToken);
+        sessionStorage.setItem('auth_user', JSON.stringify(userData));
+      } catch {
+        // sessionStorage unavailable
+      }
+      setIsLoading(false);
+      return { success: true };
+    }
+
+    setIsLoading(false);
+    return { success: false, error: 'Invalid email or password.' };
+  };
+
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    try {
+      sessionStorage.removeItem('auth_token');
+      sessionStorage.removeItem('auth_user');
+    } catch {
+      // ignore
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuthContext(): AuthContextType {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuthContext must be used within AuthProvider');
+  return ctx;
+}

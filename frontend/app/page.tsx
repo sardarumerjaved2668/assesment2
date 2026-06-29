@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PRODUCTS, CATEGORIES } from '@/lib/dummy-data';
-import { FilterState, Product } from '@/lib/types';
-import { fetchProducts } from '@/lib/api';
+import { FilterState, Product, Category } from '@/lib/types';
+import { fetchProducts, fetchCategories } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ProductGrid from '@/components/ProductGrid';
@@ -46,6 +46,35 @@ function filterDummy(filters: FilterState, page: number) {
   return { data, total, totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
 }
 
+const EMOJI_MAP: Record<string, string> = {
+  electronics: '💻',
+  clothing: '👗',
+  books: '📚',
+  home: '🏡',
+  sports: '🏅',
+  toys: '🧸',
+  beauty: '💄',
+  garden: '🌱',
+  food: '🍎',
+  automotive: '🚗',
+};
+
+const COLOR_POOL = [
+  'from-indigo-500 to-blue-600',
+  'from-violet-500 to-purple-600',
+  'from-amber-500 to-orange-600',
+  'from-emerald-500 to-teal-600',
+  'from-rose-500 to-pink-600',
+  'from-cyan-500 to-sky-600',
+];
+
+const STATIC_HERO_CARDS = [
+  { name: 'Electronics', emoji: '💻', color: 'from-indigo-500 to-blue-600', cat: 'Electronics' },
+  { name: 'Clothing', emoji: '👗', color: 'from-violet-500 to-purple-600', cat: 'Clothing' },
+  { name: 'Books', emoji: '📚', color: 'from-amber-500 to-orange-600', cat: 'Books' },
+  { name: 'Home & Garden', emoji: '🏡', color: 'from-emerald-500 to-teal-600', cat: 'Home' },
+];
+
 function CatalogPage() {
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get('q') ?? '';
@@ -64,6 +93,12 @@ function CatalogPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [usingFallback, setUsingFallback] = useState(false);
+  const [apiCategories, setApiCategories] = useState<Category[]>([]);
+
+  // Load active categories for hero grid and filter dropdown
+  useEffect(() => {
+    fetchCategories({ isActive: true }).then(setApiCategories).catch(() => {});
+  }, []);
 
   // Keep search in sync with the Navbar's ?q= param.
   useEffect(() => {
@@ -118,6 +153,19 @@ function CatalogPage() {
     setCurrentPage(1);
   }, []);
 
+  const heroCards = apiCategories.length > 0
+    ? apiCategories.slice(0, 4).map((c, i) => ({
+        name: c.name,
+        cat: c.name,
+        emoji: EMOJI_MAP[c.slug?.toLowerCase()] ?? EMOJI_MAP[c.name.toLowerCase()] ?? '🛍️',
+        color: COLOR_POOL[i % COLOR_POOL.length],
+      }))
+    : STATIC_HERO_CARDS;
+
+  const filterCategories = apiCategories.length > 0
+    ? ['All', ...apiCategories.map((c) => c.name)]
+    : CATEGORIES;
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
@@ -154,12 +202,7 @@ function CatalogPage() {
               </div>
               {/* Right: Category cards grid */}
               <div className="hidden lg:grid grid-cols-2 gap-4">
-                {[
-                  { name: 'Electronics', emoji: '💻', color: 'from-indigo-500 to-blue-600', cat: 'Electronics' },
-                  { name: 'Clothing', emoji: '👗', color: 'from-violet-500 to-purple-600', cat: 'Clothing' },
-                  { name: 'Books', emoji: '📚', color: 'from-amber-500 to-orange-600', cat: 'Books' },
-                  { name: 'Home & Garden', emoji: '🏡', color: 'from-emerald-500 to-teal-600', cat: 'Home' },
-                ].map(item => (
+                {heroCards.map(item => (
                   <button
                     key={item.cat}
                     onClick={() => handleFilterChange({search:'',category:item.cat,priceMin:0,priceMax:0,sortBy:'newest'})}
@@ -182,7 +225,7 @@ function CatalogPage() {
             <SearchFilters
               filters={filters}
               onFilterChange={handleFilterChange}
-              categories={CATEGORIES}
+              categories={filterCategories}
             />
           </div>
 

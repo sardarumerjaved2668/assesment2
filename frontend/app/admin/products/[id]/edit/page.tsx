@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CATEGORIES, PRODUCTS } from '@/lib/dummy-data';
+import { Category } from '@/lib/types';
 import { useAuthContext } from '@/context/AuthContext';
-import { fetchProduct, updateProduct } from '@/lib/api';
+import { fetchProduct, updateProduct, fetchCategories } from '@/lib/api';
 import ImageUpload from '@/components/ImageUpload';
 
 interface PageProps {
@@ -30,19 +31,24 @@ interface FormErrors {
   stockQuantity?: string;
 }
 
-const productCategories = CATEGORIES.filter((c) => c !== 'All');
+const FALLBACK_CATEGORIES = CATEGORIES.filter((c) => c !== 'All');
 
 export default function EditProductPage({ params }: PageProps) {
   const { id } = params;
   const router = useRouter();
   const { token } = useAuthContext();
 
+  const [apiCategories, setApiCategories] = useState<Category[]>([]);
+  const categoryOptions = apiCategories.length > 0
+    ? apiCategories.map((c) => c.name)
+    : FALLBACK_CATEGORIES;
+
   const [form, setForm] = useState<FormData>({
     name: '',
     description: '',
     price: '',
     imageUrl: '',
-    category: productCategories[0],
+    category: '',
     stockQuantity: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
@@ -51,6 +57,15 @@ export default function EditProductPage({ params }: PageProps) {
   const [apiError, setApiError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
+
+  // Load categories from API
+  useEffect(() => {
+    fetchCategories({ isActive: true })
+      .then(setApiCategories)
+      .catch(() => {
+        // fallback — already using FALLBACK_CATEGORIES
+      });
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -249,7 +264,8 @@ export default function EditProductPage({ params }: PageProps) {
                         onChange={(e) => update('category', e.target.value)}
                         className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white ${errors.category ? 'border-red-300' : 'border-gray-200'}`}
                       >
-                        {productCategories.map((cat) => (
+                        <option value="">Select a category</option>
+                        {categoryOptions.map((cat) => (
                           <option key={cat} value={cat}>{cat}</option>
                         ))}
                       </select>
