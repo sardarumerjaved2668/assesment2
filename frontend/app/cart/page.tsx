@@ -12,7 +12,7 @@ const SHIPPING_THRESHOLD = 100;
 const SHIPPING_COST = 9.99;
 
 export default function CartPage() {
-  const { items, cartTotal, cartCount } = useCartContext();
+  const { items, cartTotal, cartCount, loading, error } = useCartContext();
   const { user } = useAuthContext();
   const router = useRouter();
 
@@ -49,12 +49,33 @@ export default function CartPage() {
     );
   }
 
+  // Initial load (logged-in users fetch their cart from the server).
+  if (loading && items.length === 0) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center px-4">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-gray-500">Loading your cart…</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   if (items.length === 0) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
         <Navbar />
         <main className="flex-1 flex items-center justify-center px-4">
           <div className="text-center max-w-sm">
+            {error && (
+              <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                {error}
+              </div>
+            )}
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -83,7 +104,19 @@ export default function CartPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-6">
             Shopping Cart
             <span className="ml-2 text-base font-normal text-gray-500">({cartCount} {cartCount === 1 ? 'item' : 'items'})</span>
+            {loading && (
+              <span className="ml-3 inline-flex items-center gap-1.5 text-xs font-normal text-indigo-600 align-middle">
+                <span className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                Updating…
+              </span>
+            )}
           </h1>
+
+          {error && (
+            <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              {error}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart items */}

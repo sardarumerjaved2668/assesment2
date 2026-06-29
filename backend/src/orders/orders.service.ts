@@ -2,13 +2,18 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MongoRepository } from 'typeorm';
 import { ObjectId } from 'mongodb';
 import { Order, OrderStatus } from './entities/order.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { CheckoutDto } from './dto/checkout.dto';
 import { ProductsService } from '../products/products.service';
+import { CartService } from '../cart/cart.service';
 
 @Injectable()
 export class OrdersService {
@@ -16,7 +21,96 @@ export class OrdersService {
     @InjectRepository(Order)
     private readonly ordersRepository: MongoRepository<Order>,
     private readonly productsService: ProductsService,
+    private readonly cartService: CartService,
   ) {}
+
+  // Mock payment processor. In test mode card 4242… succeeds, 4000…0002 is
+  // declined. Swap this for Stripe in production.
+  private processMockPayment(
+    payment: Record<string, any>,
+  ): { success: boolean; transactionId?: string; message?: string } {
+    const card = String(payment?.cardNumber ?? '').replace(/\s/g, '');
+    if (!card) {
+      return { success: false, message: 'Payment details are required' };
+    }
+    if (card === '4000000000000002') {
+      return { success: false, message: 'Your card was declined' };
+    }
+    if (!/^\d{13,19}$/.test(card)) {
+      return { success: false, message: 'Invalid card number' };
+    }
+    return {
+      success: true,
+      transactionId: `mock_${Date.now()}_${Math.random()
+        .toString(36)
+        .slice(2, 10)}`,
+    };
+  }
+
+  // Convert the user's cart into a paid order.
+  async checkout(userId: string, dto: CheckoutDto): Promise<Order> {
+    const cart = await this.cartService.getCart(userId);
+
+    if (!cart.items.length) {
+      throw new BadRequestException('Your cart is empty');
+    }
+
+    // Validate availability and stock before charging.
+    for (const line of cart.items) {
+      if (!line.product) {
+        throw new BadRequestException(
+          'A product in your cart is no longer available',
+        );
+      }
+      if (line.product.stockQuantity < line.quantity) {
+        throw new BadRequestException(
+          `Insufficient stock for "${line.product.name}". Available: ${line.product.stockQuantity}`,
+        );
+      }
+    }
+
+    const shippingCost = Number(dto.shippingCost) || 0;
+    const totalAmount =
+      Math.round((cart.subtotal + shippingCost) * 100) / 100;
+
+    // Process (mock) payment.
+    const payment = this.processMockPayment(dto.payment);
+    if (!payment.success) {
+      throw new HttpException(
+        payment.message || 'Payment failed',
+        HttpStatus.PAYMENT_REQUIRED,
+      );
+    }
+
+    // Build order items and decrement stock.
+    const items: any[] = [];
+    for (const line of cart.items) {
+      const product = line.product as Record<string, any>;
+      await this.productsService.decrementStock(product.id, line.quantity);
+      items.push({
+        product,
+        quantity: line.quantity,
+        priceAtPurchase: product.price,
+      });
+    }
+
+    const order = this.ordersRepository.create({
+      userId,
+      status: OrderStatus.PENDING,
+      totalAmount,
+      shippingAddress: dto.shippingAddress ?? null,
+      paymentStatus: 'paid',
+      transactionId: payment.transactionId,
+      items,
+    });
+
+    const saved = await this.ordersRepository.save(order);
+
+    // Empty the cart now that the order is placed.
+    await this.cartService.clearCart(userId);
+
+    return saved;
+  }
 
   private toObjectId(id: string): ObjectId {
     if (!ObjectId.isValid(id)) {

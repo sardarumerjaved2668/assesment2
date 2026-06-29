@@ -246,6 +246,84 @@ export async function registerUser(payload: {
   return handleResponse<AuthResponse>(res);
 }
 
+// ─── Cart API ───────────────────────────────────────────────────────────────
+
+export interface CartLine {
+  productId: string;
+  quantity: number;
+  product: Product | null;
+  lineTotal: number;
+}
+
+export interface CartResponse {
+  items: CartLine[];
+  itemCount: number;
+  subtotal: number;
+  total: number;
+}
+
+/** Get the current user's cart. */
+export async function getCart(token: string): Promise<CartResponse> {
+  const res = await fetch(`${API_URL}/cart`, {
+    headers: authHeaders(token),
+    signal: AbortSignal.timeout(8000),
+  });
+  return handleResponse<CartResponse>(res);
+}
+
+/** Add an item to the cart (or increase its quantity). */
+export async function addToCartApi(
+  productId: string,
+  quantity: number,
+  token: string,
+): Promise<CartResponse> {
+  const res = await fetch(`${API_URL}/cart`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ productId, quantity }),
+    signal: AbortSignal.timeout(8000),
+  });
+  return handleResponse<CartResponse>(res);
+}
+
+/** Set the quantity of a cart item (0 removes it). */
+export async function updateCartItemApi(
+  productId: string,
+  quantity: number,
+  token: string,
+): Promise<CartResponse> {
+  const res = await fetch(`${API_URL}/cart/${productId}`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify({ quantity }),
+    signal: AbortSignal.timeout(8000),
+  });
+  return handleResponse<CartResponse>(res);
+}
+
+/** Remove an item from the cart. */
+export async function removeCartItemApi(
+  productId: string,
+  token: string,
+): Promise<CartResponse> {
+  const res = await fetch(`${API_URL}/cart/${productId}`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+    signal: AbortSignal.timeout(8000),
+  });
+  return handleResponse<CartResponse>(res);
+}
+
+/** Clear the entire cart. */
+export async function clearCartApi(token: string): Promise<CartResponse> {
+  const res = await fetch(`${API_URL}/cart`, {
+    method: 'DELETE',
+    headers: authHeaders(token),
+    signal: AbortSignal.timeout(8000),
+  });
+  return handleResponse<CartResponse>(res);
+}
+
 // ─── Orders / Checkout API ──────────────────────────────────────────────────
 
 export interface CreateOrderPayload {
@@ -264,6 +342,34 @@ export async function createOrder(
     headers: authHeaders(token),
     body: JSON.stringify(payload),
     signal: AbortSignal.timeout(12000),
+  });
+  return handleResponse<Order>(res);
+}
+
+export interface CheckoutPayload {
+  shippingAddress?: ShippingAddress;
+  payment: {
+    cardNumber: string;
+    nameOnCard?: string;
+    expiry?: string;
+    cvv?: string;
+  };
+  shippingCost?: number;
+}
+
+/**
+ * Checkout — converts the user's server cart into a paid order.
+ * The backend validates stock, processes a (mock) payment, and clears the cart.
+ */
+export async function checkout(
+  payload: CheckoutPayload,
+  token: string,
+): Promise<Order> {
+  const res = await fetch(`${API_URL}/orders/checkout`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(15000),
   });
   return handleResponse<Order>(res);
 }

@@ -33,6 +33,13 @@ export class Order {
   @Column({ nullable: true })
   shippingAddress: Record<string, any>;
 
+  // Payment (mock) details.
+  @Column({ default: 'pending' })
+  paymentStatus: string;
+
+  @Column({ nullable: true })
+  transactionId: string;
+
   // Order line items are embedded directly in the order document.
   @Column()
   items: any[];

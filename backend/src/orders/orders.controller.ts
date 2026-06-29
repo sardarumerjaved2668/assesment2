@@ -10,6 +10,7 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { CheckoutDto } from './dto/checkout.dto';
 import { OrderStatus } from './entities/order.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -29,8 +30,14 @@ interface AuthUser {
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
+  @Post('checkout')
+  @ApiOperation({ summary: 'Checkout: convert the cart into a paid order' })
+  checkout(@CurrentUser() user: AuthUser, @Body() dto: CheckoutDto) {
+    return this.ordersService.checkout(user.id, dto);
+  }
+
   @Post()
-  @ApiOperation({ summary: 'Create an order (checkout)' })
+  @ApiOperation({ summary: 'Create an order from explicit items' })
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateOrderDto) {
     return this.ordersService.create(user.id, dto);
   }

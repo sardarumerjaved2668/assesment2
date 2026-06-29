@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCartContext } from '@/context/CartContext';
 import { useAuthContext } from '@/context/AuthContext';
-import { ShippingAddress } from '@/lib/types';
-import { createOrder } from '@/lib/api';
+import { ShippingAddress, Order } from '@/lib/types';
+import { checkout } from '@/lib/api';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import OrderStatusBadge from '@/components/OrderStatusBadge';
 
 type Step = 1 | 2 | 3;
 
@@ -28,6 +29,8 @@ export default function CheckoutPage() {
   const [step, setStep] = useState<Step>(1);
   const [orderId, setOrderId] = useState(() => `ORD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`);
   const [placedTotal, setPlacedTotal] = useState(0);
+  const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
+  const [isRealOrder, setIsRealOrder] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
 
   const [shipping, setShipping] = useState<ShippingAddress>({
@@ -117,25 +120,40 @@ export default function CheckoutPage() {
     setOrderError(null);
     try {
       if (token && !token.startsWith('mock_')) {
-        // Real checkout — persist the order via the backend.
-        const created = await createOrder(
+        // Real checkout — backend converts the cart into a paid order.
+        const created = await checkout(
           {
-            items: items.map((i) => ({ product: i.product, quantity: i.quantity })),
             shippingAddress: shipping,
+            payment,
             shippingCost,
           },
           token,
         );
         setOrderId(String(created.id));
+        setPlacedOrder(created);
+        setIsRealOrder(true);
       } else {
-        // Demo mode — simulate payment processing.
+        // Demo mode — simulate payment and build a local confirmation.
         await new Promise((r) => setTimeout(r, 1200));
+        setPlacedOrder({
+          id: orderId,
+          status: 'pending',
+          totalAmount: orderTotal,
+          createdAt: new Date().toISOString(),
+          shippingAddress: shipping,
+          items: items.map((i) => ({
+            product: i.product,
+            quantity: i.quantity,
+            priceAtPurchase: i.product.price,
+          })),
+        });
+        setIsRealOrder(false);
       }
       setPlacedTotal(orderTotal);
       setStep(3);
     } catch (err) {
       setOrderError(
-        err instanceof Error ? err.message : 'Failed to place order. Please try again.',
+        err instanceof Error ? err.message : 'Payment failed. Please try again.',
       );
     } finally {
       setIsProcessing(false);
@@ -405,14 +423,45 @@ export default function CheckoutPage() {
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Order Confirmed!</h2>
               <p className="text-gray-500 mb-4">Thank you for your order, {user.firstName}! Your order has been placed successfully.</p>
-              <div className="inline-block bg-indigo-50 rounded-lg px-4 py-2 mb-6">
-                <p className="text-sm text-indigo-600 font-medium">Order ID</p>
-                <p className="text-lg font-bold text-indigo-800">{orderId}</p>
+              <div className="inline-flex flex-col items-center gap-2 bg-indigo-50 rounded-lg px-5 py-3 mb-6">
+                <div className="text-center">
+                  <p className="text-sm text-indigo-600 font-medium">Order ID</p>
+                  <p className="text-lg font-bold text-indigo-800">
+                    {isRealOrder ? `#${orderId.slice(-8).toUpperCase()}` : orderId}
+                  </p>
+                </div>
+                <OrderStatusBadge status={placedOrder?.status ?? 'pending'} />
               </div>
 
-              {/* Summary */}
-              <div className="text-left max-w-sm mx-auto mb-6">
-                <h3 className="font-semibold text-gray-900 mb-2 text-sm">Shipping to:</h3>
+              {/* Items */}
+              {placedOrder && placedOrder.items.length > 0 && (
+                <div className="text-left max-w-md mx-auto mb-6">
+                  <h3 className="font-semibold text-gray-900 mb-3 text-sm">Items</h3>
+                  <div className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden">
+                    {placedOrder.items.map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-3 p-3">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={item.product.imageUrl}
+                          alt={item.product.name}
+                          className="w-10 h-10 rounded-lg object-cover bg-gray-100 shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{item.product.name}</p>
+                          <p className="text-xs text-gray-400">Qty {item.quantity} × ${item.priceAtPurchase.toFixed(2)}</p>
+                        </div>
+                        <span className="text-sm font-semibold text-gray-900">
+                          ${(item.priceAtPurchase * item.quantity).toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Shipping */}
+              <div className="text-left max-w-md mx-auto mb-6">
+                <h3 className="font-semibold text-gray-900 mb-2 text-sm">Shipping to</h3>
                 <p className="text-sm text-gray-600">{shipping.firstName} {shipping.lastName}</p>
                 <p className="text-sm text-gray-600">{shipping.address}</p>
                 <p className="text-sm text-gray-600">{shipping.city}, {shipping.state} {shipping.zip}</p>
@@ -424,6 +473,11 @@ export default function CheckoutPage() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                {isRealOrder && (
+                  <Link href={`/orders/${orderId}`} className="px-6 py-3 border border-indigo-200 text-indigo-700 rounded-xl font-medium hover:bg-indigo-50 transition-colors text-sm">
+                    View Order Details
+                  </Link>
+                )}
                 <Link href="/orders" className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors text-sm">
                   View Orders
                 </Link>
