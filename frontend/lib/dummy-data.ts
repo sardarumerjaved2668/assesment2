@@ -1,0 +1,242 @@
+import { Product, Order, DashboardStats } from './types';
+
+export const PRODUCTS: Product[] = [
+  // Electronics
+  {
+    id: 'prod-1',
+    name: 'ProBook Laptop 15"',
+    description: 'Powerful 15-inch laptop with Intel Core i7, 16GB RAM, 512GB SSD, and a stunning 4K display. Perfect for professionals and creators who demand performance.',
+    price: 1299.99,
+    imageUrl: 'https://picsum.photos/seed/laptop/400/300',
+    category: 'Electronics',
+    stockQuantity: 15,
+    createdAt: '2024-01-10T10:00:00Z',
+  },
+  {
+    id: 'prod-2',
+    name: 'SmartPhone X12',
+    description: 'Next-generation smartphone featuring a 6.7-inch AMOLED display, triple camera system, 5G connectivity, and all-day battery life. Stay connected like never before.',
+    price: 899.99,
+    imageUrl: 'https://picsum.photos/seed/phone/400/300',
+    category: 'Electronics',
+    stockQuantity: 42,
+    createdAt: '2024-01-15T10:00:00Z',
+  },
+  {
+    id: 'prod-3',
+    name: 'NoiseBlock Pro Headphones',
+    description: 'Premium over-ear headphones with active noise cancellation, 30-hour battery life, and studio-quality sound. Experience music the way it was meant to be heard.',
+    price: 349.99,
+    imageUrl: 'https://picsum.photos/seed/headphones/400/300',
+    category: 'Electronics',
+    stockQuantity: 28,
+    createdAt: '2024-01-20T10:00:00Z',
+  },
+  // Clothing
+  {
+    id: 'prod-4',
+    name: 'Classic Oxford Shirt',
+    description: 'Timeless Oxford button-down shirt crafted from 100% premium cotton. Features a comfortable regular fit and is available in multiple colors. Perfect for any occasion.',
+    price: 59.99,
+    imageUrl: 'https://picsum.photos/seed/shirt/400/300',
+    category: 'Clothing',
+    stockQuantity: 85,
+    createdAt: '2024-01-25T10:00:00Z',
+  },
+  {
+    id: 'prod-5',
+    name: 'Slim Fit Denim Jeans',
+    description: 'Modern slim-fit jeans made from stretch denim for ultimate comfort and style. Features a classic five-pocket design and is built to last through everyday wear.',
+    price: 79.99,
+    imageUrl: 'https://picsum.photos/seed/jeans/400/300',
+    category: 'Clothing',
+    stockQuantity: 63,
+    createdAt: '2024-01-28T10:00:00Z',
+  },
+  {
+    id: 'prod-6',
+    name: 'Urban Explorer Jacket',
+    description: 'Versatile urban jacket with water-resistant shell, multiple pockets, and removable hood. Designed for the modern city dweller who values both style and function.',
+    price: 149.99,
+    imageUrl: 'https://picsum.photos/seed/jacket/400/300',
+    category: 'Clothing',
+    stockQuantity: 34,
+    createdAt: '2024-02-01T10:00:00Z',
+  },
+  // Books
+  {
+    id: 'prod-7',
+    name: 'The Midnight Library',
+    description: 'A mesmerizing novel about infinite possibilities and the choices that make us who we are. Follow Nora Seed as she discovers a library between life and death, filled with every life she could have lived.',
+    price: 16.99,
+    imageUrl: 'https://picsum.photos/seed/novel/400/300',
+    category: 'Books',
+    stockQuantity: 120,
+    createdAt: '2024-02-05T10:00:00Z',
+  },
+  {
+    id: 'prod-8',
+    name: 'Clean Code: A Handbook',
+    description: 'A must-read for every software developer. This comprehensive guide teaches you to write clean, maintainable code through practical examples and proven principles.',
+    price: 42.99,
+    imageUrl: 'https://picsum.photos/seed/techbook/400/300',
+    category: 'Books',
+    stockQuantity: 67,
+    createdAt: '2024-02-10T10:00:00Z',
+  },
+  {
+    id: 'prod-9',
+    name: 'The Joy of Cooking',
+    description: 'The definitive cookbook for the modern kitchen. Featuring over 4,500 recipes, this comprehensive guide covers everything from basic techniques to elaborate feasts.',
+    price: 35.99,
+    imageUrl: 'https://picsum.photos/seed/cookbook/400/300',
+    category: 'Books',
+    stockQuantity: 89,
+    createdAt: '2024-02-15T10:00:00Z',
+  },
+  // Home
+  {
+    id: 'prod-10',
+    name: 'Minimalist Arc Floor Lamp',
+    description: 'Elegant arc floor lamp with adjustable arm and warm LED lighting. The perfect blend of form and function, this lamp adds sophisticated ambiance to any living space.',
+    price: 189.99,
+    imageUrl: 'https://picsum.photos/seed/lamp/400/300',
+    category: 'Home',
+    stockQuantity: 22,
+    createdAt: '2024-02-18T10:00:00Z',
+  },
+  {
+    id: 'prod-11',
+    name: 'Ceramic Pour-Over Mug Set',
+    description: 'Artisan ceramic mug set handcrafted by local potters. Set of 4 mugs with a unique speckled glaze. Microwave and dishwasher safe. Perfect for morning coffee rituals.',
+    price: 44.99,
+    imageUrl: 'https://picsum.photos/seed/mug/400/300',
+    category: 'Home',
+    stockQuantity: 55,
+    createdAt: '2024-02-22T10:00:00Z',
+  },
+  {
+    id: 'prod-12',
+    name: 'Monstera Deliciosa Plant',
+    description: 'Beautiful Swiss cheese plant (Monstera Deliciosa) in a 6-inch decorative pot. Easy to care for, this tropical beauty is perfect for adding a touch of nature to your home or office.',
+    price: 34.99,
+    imageUrl: 'https://picsum.photos/seed/plant/400/300',
+    category: 'Home',
+    stockQuantity: 18,
+    createdAt: '2024-02-25T10:00:00Z',
+  },
+];
+
+export const ORDERS: Order[] = [
+  {
+    id: 'order-001',
+    status: 'delivered',
+    totalAmount: 1649.97,
+    createdAt: '2024-03-01T14:30:00Z',
+    shippingAddress: {
+      firstName: 'John',
+      lastName: 'Customer',
+      address: '123 Main Street',
+      city: 'New York',
+      state: 'NY',
+      zip: '10001',
+      country: 'United States',
+    },
+    items: [
+      {
+        product: PRODUCTS[0],
+        quantity: 1,
+        priceAtPurchase: 1299.99,
+      },
+      {
+        product: PRODUCTS[2],
+        quantity: 1,
+        priceAtPurchase: 349.99,
+      },
+    ],
+  },
+  {
+    id: 'order-002',
+    status: 'processing',
+    totalAmount: 219.97,
+    createdAt: '2024-03-10T09:15:00Z',
+    shippingAddress: {
+      firstName: 'John',
+      lastName: 'Customer',
+      address: '123 Main Street',
+      city: 'New York',
+      state: 'NY',
+      zip: '10001',
+      country: 'United States',
+    },
+    items: [
+      {
+        product: PRODUCTS[3],
+        quantity: 1,
+        priceAtPurchase: 59.99,
+      },
+      {
+        product: PRODUCTS[4],
+        quantity: 1,
+        priceAtPurchase: 79.99,
+      },
+      {
+        product: PRODUCTS[5],
+        quantity: 1,
+        priceAtPurchase: 149.99,
+      },
+    ],
+  },
+  {
+    id: 'order-003',
+    status: 'pending',
+    totalAmount: 95.97,
+    createdAt: '2024-03-18T16:45:00Z',
+    shippingAddress: {
+      firstName: 'John',
+      lastName: 'Customer',
+      address: '123 Main Street',
+      city: 'New York',
+      state: 'NY',
+      zip: '10001',
+      country: 'United States',
+    },
+    items: [
+      {
+        product: PRODUCTS[6],
+        quantity: 1,
+        priceAtPurchase: 16.99,
+      },
+      {
+        product: PRODUCTS[8],
+        quantity: 1,
+        priceAtPurchase: 35.99,
+      },
+      {
+        product: PRODUCTS[10],
+        quantity: 1,
+        priceAtPurchase: 44.99,
+      },
+    ],
+  },
+];
+
+export const DASHBOARD_STATS: DashboardStats = {
+  totalSales: 12450,
+  totalOrders: 47,
+  ordersByStatus: {
+    pending: 12,
+    processing: 8,
+    shipped: 15,
+    delivered: 12,
+  },
+  topProducts: [
+    { product: PRODUCTS[0], sold: 24 },
+    { product: PRODUCTS[1], sold: 18 },
+    { product: PRODUCTS[2], sold: 15 },
+    { product: PRODUCTS[4], sold: 12 },
+    { product: PRODUCTS[5], sold: 10 },
+  ],
+};
+
+export const CATEGORIES = ['All', 'Electronics', 'Clothing', 'Books', 'Home'];
