@@ -27,9 +27,31 @@ company-test/
 ## Prerequisites
 
 - Node.js 18+
-- Docker (for local MongoDB) — or a MongoDB Atlas connection string
+- Docker (for local MongoDB or full-stack Docker Compose) — or a MongoDB Atlas connection string
 
-## Setup
+## Quick Start (Docker Compose — recommended)
+
+Runs the full stack (MongoDB + backend + frontend) in one command:
+
+```bash
+git clone https://github.com/sardarumerjaved2668/assesment2.git
+cd assesment2
+docker-compose up --build
+```
+
+Then seed the database (wait for backend to start first):
+
+```bash
+docker exec -it shopnext-backend node dist/seed/seed.js
+```
+
+- Frontend: **http://localhost:3000**
+- Backend API: **http://localhost:3001**
+- Swagger docs: **http://localhost:3001/api/docs**
+
+---
+
+## Manual Setup (local dev)
 
 ### 1. Clone and install
 
@@ -119,7 +141,7 @@ npm run dev
 
 ### Admin Panel (`/admin`)
 
-- **Dashboard** — total sales, order count by status, top-selling products, SVG bar chart
+- **Dashboard** — total sales, order count by status, top-selling products, interactive Recharts charts (bar, donut, area)
 - **Product management** — create, edit, delete; image upload (drag-drop via Multer) or URL
 - **Order management** — view all orders, inline status updates (`pending → processing → shipped → delivered`, `cancelled`)
 - Restricted to admin-role users only (backend guards + frontend layout redirect)

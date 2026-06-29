@@ -81,7 +81,7 @@ On mount, `AuthContext` starts with `isLoading=true`, reads sessionStorage, and 
 - Orders: cart-based checkout, mock payment, stock decrement, status lifecycle, `GET /orders/stats`
 - Uploads: Multer disk storage, static file serving, 5 MB / image-only validation
 - Seed script: idempotent, creates admin + customer + 10 products
-- Admin dashboard: real stats API, SVG bar chart, top products table
+- Admin dashboard: real stats API, Recharts (bar chart, donut chart, area chart), top products table
 - Admin orders: real API, inline status updates, client-side status filter tabs
 - Automated tests: unit tests for mock payment, checkout stock validation, cart service, product suggestions
 
@@ -93,8 +93,6 @@ On mount, `AuthContext` starts with `isLoading=true`, reads sessionStorage, and 
 ### What I'd Do With More Time
 1. Stripe test-mode integration (replace `processMockPayment`)
 2. Multer → S3/Cloudinary storage adapter for production image hosting
-3. `docker-compose.yml` bundling MongoDB + backend + frontend
-4. Deploy: frontend to Vercel, backend to Railway/Render
-5. More comprehensive tests: e2e auth flow, product filtering edge cases
-6. Rate limiting on auth endpoints, helmet.js for security headers
-7. Pagination on admin orders page
+3. Deploy: frontend to Vercel, backend to Railway/Render
+4. Rate limiting on auth endpoints, helmet.js for security headers
+5. Pagination on admin orders page
