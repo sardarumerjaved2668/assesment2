@@ -26,8 +26,6 @@ export default function LoginPage() {
     const result = await login(email, password);
 
     if (result.success) {
-      // Determine redirect based on role (we need to check after login)
-      // Re-read from context after login
       if (email === 'admin@store.com') {
         router.push('/admin');
       } else {
@@ -39,36 +37,65 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Simple header */}
-      <div className="px-4 py-4 bg-white border-b border-gray-100">
-        <Link href="/" className="text-xl font-bold text-indigo-600">ShopNext</Link>
+    <div className="min-h-screen flex">
+      {/* Left panel */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-900 via-indigo-950 to-violet-950 flex-col justify-center px-16 text-white relative overflow-hidden">
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full border-[40px] border-violet-700/30 pointer-events-none" />
+        <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full border-[30px] border-indigo-700/20 pointer-events-none" />
+        <div className="relative z-10">
+          <Link href="/" className="font-black text-3xl bg-gradient-to-r from-violet-300 to-indigo-300 bg-clip-text text-transparent tracking-tight">
+            ShopNext
+          </Link>
+          <p className="text-indigo-200 mt-3 text-lg font-light">Your premium shopping destination</p>
+          <div className="mt-12 space-y-6">
+            {[
+              'Free shipping on orders $100+',
+              '30-day easy returns',
+              'Secure & encrypted payments',
+            ].map((feature) => (
+              <div key={feature} className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full bg-indigo-500/30 flex items-center justify-center shrink-0">
+                  <svg className="w-3.5 h-3.5 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span className="text-sm text-indigo-100 font-medium">{feature}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
+      {/* Right panel */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-gray-50">
         <div className="w-full max-w-md">
+          <div className="lg:hidden mb-8 text-center">
+            <Link href="/" className="font-black text-2xl bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+              ShopNext
+            </Link>
+          </div>
+
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-            <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
-              <p className="text-gray-500 text-sm mt-1">Sign in to your account</p>
+            <div className="mb-6">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Welcome back</h1>
+              <p className="text-gray-500 text-sm mt-1">Sign in to continue</p>
             </div>
 
-            {/* Hint */}
-            <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-lg mb-5 text-sm text-indigo-700">
-              <strong>Demo credentials:</strong><br />
-              Customer: <code className="font-mono">customer@store.com</code> / <code className="font-mono">Customer123!</code><br />
-              Admin: <code className="font-mono">admin@store.com</code> / <code className="font-mono">Admin123!</code>
+            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-5 text-sm text-indigo-700">
+              <p className="font-semibold mb-1">Demo credentials</p>
+              <p>Customer: <code className="font-mono text-xs bg-indigo-100 px-1 py-0.5 rounded">customer@store.com</code> / <code className="font-mono text-xs bg-indigo-100 px-1 py-0.5 rounded">Customer123!</code></p>
+              <p className="mt-1">Admin: <code className="font-mono text-xs bg-indigo-100 px-1 py-0.5 rounded">admin@store.com</code> / <code className="font-mono text-xs bg-indigo-100 px-1 py-0.5 rounded">Admin123!</code></p>
             </div>
 
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-4 text-sm text-red-700">
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl mb-4 text-sm text-red-700">
                 {error}
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
                   Email Address
                 </label>
                 <input
@@ -78,12 +105,12 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   autoComplete="email"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                 />
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
                   Password
                 </label>
                 <div className="relative">
@@ -92,14 +119,14 @@ export default function LoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="password"
                     autoComplete="current-password"
-                    className="w-full px-3 py-2.5 pr-10 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                     aria-label="Toggle password visibility"
                   >
                     {showPassword ? (
@@ -119,7 +146,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-2.5 px-4 bg-indigo-600 text-white rounded-lg font-semibold text-sm hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-semibold text-sm hover:from-indigo-700 hover:to-violet-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 mt-1"
               >
                 {isLoading ? (
                   <>
@@ -133,9 +160,9 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <p className="text-sm text-gray-500 text-center mt-5">
-              Don&apos;t have an account?{' '}
-              <Link href="/auth/register" className="text-indigo-600 font-medium hover:underline">
+            <p className="text-sm text-gray-500 text-center mt-6">
+              {"Don't have an account? "}
+              <Link href="/auth/register" className="text-indigo-600 font-semibold hover:underline">
                 Create one
               </Link>
             </p>

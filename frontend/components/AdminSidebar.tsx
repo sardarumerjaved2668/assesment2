@@ -50,70 +50,72 @@ export default function AdminSidebar() {
   };
 
   return (
-    <aside className="w-64 min-h-screen bg-white border-r border-gray-100 flex flex-col">
+    <aside className="w-64 bg-slate-900 flex flex-col min-h-screen fixed left-0 top-0 z-20">
       {/* Logo */}
-      <div className="px-6 py-5 border-b border-gray-100">
-        <Link href="/" className="text-xl font-bold text-indigo-600">
-          ShopNext
-        </Link>
-        <p className="text-xs text-gray-400 mt-0.5">Admin Panel</p>
-      </div>
-
-      {/* User info */}
-      {user && (
-        <div className="px-6 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-semibold text-sm">
-              {user.firstName[0]}{user.lastName[0]}
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-900">{user.firstName} {user.lastName}</p>
-              <p className="text-xs text-gray-500 capitalize">{user.role}</p>
-            </div>
+      <div className="px-6 py-5 border-b border-slate-800">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shrink-0">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+          </div>
+          <div>
+            <div className="text-white font-black text-lg leading-none">ShopNext</div>
+            <div className="text-slate-400 text-[10px] font-medium tracking-widest uppercase mt-0.5">Admin Console</div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-4 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-0.5">
+        <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase px-3 py-2 mt-1">Main Menu</p>
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
               isActive(item.href)
-                ? 'bg-indigo-50 text-indigo-700'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
             }`}
           >
-            <span className={isActive(item.href) ? 'text-indigo-600' : 'text-gray-400'}>
-              {item.icon}
-            </span>
-            {item.label}
+            {item.icon}
+            <span className="text-sm font-medium">{item.label}</span>
           </Link>
         ))}
-      </nav>
 
-      {/* Bottom actions */}
-      <div className="px-4 py-4 border-t border-gray-100 space-y-1">
+        <p className="text-[10px] font-bold tracking-widest text-slate-500 uppercase px-3 py-2 mt-4">Store</p>
         <Link
           href="/"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-        >
-          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
-          View Store
-        </Link>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-slate-400 hover:bg-slate-800 hover:text-white"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
           </svg>
-          Sign Out
-        </button>
+          <span className="text-sm font-medium">View Store</span>
+        </Link>
+      </nav>
+
+      {/* User profile */}
+      <div className="border-t border-slate-800 p-4">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+            {user?.firstName?.[0] ?? ''}{user?.lastName?.[0] ?? ''}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-sm font-semibold truncate">{user?.firstName} {user?.lastName}</p>
+            <p className="text-slate-400 text-xs capitalize">{user?.role}</p>
+          </div>
+          <button
+            onClick={handleLogout}
+            title="Sign out"
+            className="text-slate-400 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-slate-800"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+          </button>
+        </div>
       </div>
     </aside>
   );

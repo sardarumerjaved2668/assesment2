@@ -123,16 +123,62 @@ function CatalogPage() {
       <Navbar />
       <main className="flex-1">
         {/* Hero */}
-        <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 text-white py-12 px-4">
-          <div className="max-w-7xl mx-auto text-center">
-            <h1 className="text-3xl sm:text-4xl font-bold mb-3">Discover Amazing Products</h1>
-            <p className="text-indigo-200 text-lg">Shop the latest electronics, fashion, books, and home decor.</p>
+        <section className="bg-gradient-to-br from-slate-900 via-indigo-950 to-violet-950 text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              {/* Left: Text content */}
+              <div>
+                <span className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-sm font-medium text-white/90 mb-6">
+                  ✨ New arrivals every week
+                </span>
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] mb-6">
+                  Shop the Future,<br />
+                  <span className="bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">Today.</span>
+                </h1>
+                <p className="text-lg text-white/70 mb-8 max-w-md leading-relaxed">
+                  Discover thousands of premium products. Electronics, fashion, books, and more — all in one place.
+                </p>
+                <div className="flex flex-wrap gap-4 mb-10">
+                  <a href="#products" className="px-8 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl font-bold text-white shadow-lg hover:shadow-xl hover:opacity-90 transition-all">
+                    Shop Now
+                  </a>
+                  <button onClick={() => handleFilterChange({search:'',category:'All',priceMin:0,priceMax:0,sortBy:'newest'})} className="px-8 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl font-semibold text-white hover:bg-white/20 transition-all">
+                    Browse All
+                  </button>
+                </div>
+                <div className="flex items-center gap-6 text-sm text-white/60">
+                  <span className="flex items-center gap-2">✓ Free Shipping $100+</span>
+                  <span className="flex items-center gap-2">✓ Easy Returns</span>
+                  <span className="flex items-center gap-2">✓ Secure Payment</span>
+                </div>
+              </div>
+              {/* Right: Category cards grid */}
+              <div className="hidden lg:grid grid-cols-2 gap-4">
+                {[
+                  { name: 'Electronics', emoji: '💻', color: 'from-indigo-500 to-blue-600', cat: 'Electronics' },
+                  { name: 'Clothing', emoji: '👗', color: 'from-violet-500 to-purple-600', cat: 'Clothing' },
+                  { name: 'Books', emoji: '📚', color: 'from-amber-500 to-orange-600', cat: 'Books' },
+                  { name: 'Home & Garden', emoji: '🏡', color: 'from-emerald-500 to-teal-600', cat: 'Home' },
+                ].map(item => (
+                  <button
+                    key={item.cat}
+                    onClick={() => handleFilterChange({search:'',category:item.cat,priceMin:0,priceMax:0,sortBy:'newest'})}
+                    className={`bg-gradient-to-br ${item.color} rounded-2xl p-6 text-left hover:scale-105 transition-transform cursor-pointer`}
+                  >
+                    <div className="text-3xl mb-3">{item.emoji}</div>
+                    <div className="text-white font-bold text-lg">{item.name}</div>
+                    <div className="text-white/70 text-sm mt-1">Shop &#8594;</div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Products section */}
+        <section id="products" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Filters */}
-          <div className="mb-6">
+          <div className="mb-8">
             <SearchFilters
               filters={filters}
               onFilterChange={handleFilterChange}
@@ -140,8 +186,9 @@ function CatalogPage() {
             />
           </div>
 
-          {/* Result count */}
-          <div className="flex items-center justify-between mb-4">
+          {/* Heading + result count */}
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Featured Products</h2>
+          <div className="flex items-center justify-between mb-6">
             <p className="text-sm text-gray-500">
               {loading ? (
                 'Loading products…'
@@ -153,20 +200,19 @@ function CatalogPage() {
               )}
             </p>
             {usingFallback && !loading && (
-              <span className="text-xs text-amber-600">Showing demo data — backend offline</span>
+              <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">Showing demo data — backend offline</span>
             )}
           </div>
 
-          {/* Grid / states */}
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {Array.from({ length: PAGE_SIZE }).map((_, i) => (
-                <div key={i} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-                  <div className="aspect-[4/3] bg-gray-200 animate-pulse" />
+                <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+                  <div className="aspect-square bg-gray-200 animate-pulse" />
                   <div className="p-4 space-y-3">
                     <div className="h-4 bg-gray-200 rounded animate-pulse" />
                     <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse" />
-                    <div className="h-9 bg-gray-200 rounded-lg animate-pulse" />
+                    <div className="h-9 bg-gray-200 rounded-xl animate-pulse" />
                   </div>
                 </div>
               ))}
@@ -175,23 +221,22 @@ function CatalogPage() {
             <ProductGrid products={products} />
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-5">
+                <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">No products found</h3>
-              <p className="text-gray-500">Try adjusting your filters or search term.</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">No products found</h3>
+              <p className="text-gray-500 mb-6">Try adjusting your filters or search term.</p>
               <button
                 onClick={() => handleFilterChange({ search: '', category: 'All', priceMin: 0, priceMax: 0, sortBy: 'newest' })}
-                className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-semibold hover:opacity-90 transition-all"
               >
                 Clear Filters
               </button>
             </div>
           )}
 
-          {/* Pagination */}
           {!loading && totalPages > 1 && (
             <div className="mt-10 flex justify-center">
               <Pagination
@@ -201,7 +246,7 @@ function CatalogPage() {
               />
             </div>
           )}
-        </div>
+        </section>
       </main>
       <Footer />
     </div>
@@ -213,8 +258,8 @@ export default function Home() {
     <Suspense fallback={
       <div className="min-h-screen flex flex-col bg-gray-50">
         <div className="h-16 bg-white border-b border-gray-100" />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        <div className="flex-1 bg-gradient-to-br from-slate-900 via-indigo-950 to-violet-950 flex items-center justify-center">
+          <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin" />
         </div>
       </div>
     }>

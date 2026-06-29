@@ -86,31 +86,63 @@ export default function RegisterPage() {
     { key: 'firstName', label: 'First Name', type: 'text', placeholder: 'John' },
     { key: 'lastName', label: 'Last Name', type: 'text', placeholder: 'Smith' },
     { key: 'email', label: 'Email Address', type: 'email', placeholder: 'john@example.com' },
-    { key: 'password', label: 'Password', type: 'password', placeholder: '••••••••' },
-    { key: 'confirmPassword', label: 'Confirm Password', type: 'password', placeholder: '••••••••' },
+    { key: 'password', label: 'Password', type: 'password', placeholder: 'password' },
+    { key: 'confirmPassword', label: 'Confirm Password', type: 'password', placeholder: 'confirm password' },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="px-4 py-4 bg-white border-b border-gray-100">
-        <Link href="/" className="text-xl font-bold text-indigo-600">ShopNext</Link>
+    <div className="min-h-screen flex">
+      {/* Left panel */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-900 via-indigo-950 to-violet-950 flex-col justify-center px-16 text-white relative overflow-hidden">
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full border-[40px] border-violet-700/30 pointer-events-none" />
+        <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full border-[30px] border-indigo-700/20 pointer-events-none" />
+        <div className="relative z-10">
+          <Link href="/" className="font-black text-3xl bg-gradient-to-r from-violet-300 to-indigo-300 bg-clip-text text-transparent tracking-tight">
+            ShopNext
+          </Link>
+          <p className="text-indigo-200 mt-3 text-lg font-light">Your premium shopping destination</p>
+          <div className="mt-12 space-y-6">
+            {[
+              'Free shipping on orders $100+',
+              '30-day easy returns',
+              'Secure & encrypted payments',
+            ].map((feature) => (
+              <div key={feature} className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full bg-indigo-500/30 flex items-center justify-center shrink-0">
+                  <svg className="w-3.5 h-3.5 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span className="text-sm text-indigo-100 font-medium">{feature}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
+      {/* Right panel */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-gray-50">
         <div className="w-full max-w-md">
+          <div className="lg:hidden mb-8 text-center">
+            <Link href="/" className="font-black text-2xl bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+              ShopNext
+            </Link>
+          </div>
+
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-            <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">Create account</h1>
+            <div className="mb-6">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Create account</h1>
               <p className="text-gray-500 text-sm mt-1">Join ShopNext today</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              {/* First & Last name side by side */}
               <div className="grid grid-cols-2 gap-4">
                 {(['firstName', 'lastName'] as const).map((key) => {
                   const field = fields.find((f) => f.key === key)!;
                   return (
                     <div key={key}>
-                      <label htmlFor={key} className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor={key} className="block text-sm font-medium text-gray-700 mb-1.5">
                         {field.label}
                       </label>
                       <input
@@ -119,7 +151,7 @@ export default function RegisterPage() {
                         value={form[key]}
                         onChange={(e) => update(key, e.target.value)}
                         placeholder={field.placeholder}
-                        className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors[key] ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
+                        className={`w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${errors[key] ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
                       />
                       {errors[key] && <p className="text-xs text-red-500 mt-1">{errors[key]}</p>}
                     </div>
@@ -131,7 +163,7 @@ export default function RegisterPage() {
                 const field = fields.find((f) => f.key === key)!;
                 return (
                   <div key={key}>
-                    <label htmlFor={key} className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor={key} className="block text-sm font-medium text-gray-700 mb-1.5">
                       {field.label}
                     </label>
                     <input
@@ -141,7 +173,7 @@ export default function RegisterPage() {
                       onChange={(e) => update(key, e.target.value)}
                       placeholder={field.placeholder}
                       autoComplete={key === 'email' ? 'email' : key === 'password' ? 'new-password' : 'new-password'}
-                      className={`w-full px-3 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors[key] ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
+                      className={`w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${errors[key] ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
                     />
                     {errors[key] && <p className="text-xs text-red-500 mt-1">{errors[key]}</p>}
                   </div>
@@ -151,7 +183,7 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-2.5 px-4 bg-indigo-600 text-white rounded-lg font-semibold text-sm hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 mt-2"
+                className="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-semibold text-sm hover:from-indigo-700 hover:to-violet-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 mt-2"
               >
                 {isLoading ? (
                   <>
@@ -165,9 +197,9 @@ export default function RegisterPage() {
               </button>
             </form>
 
-            <p className="text-sm text-gray-500 text-center mt-5">
-              Already have an account?{' '}
-              <Link href="/auth/login" className="text-indigo-600 font-medium hover:underline">
+            <p className="text-sm text-gray-500 text-center mt-6">
+              {'Already have an account? '}
+              <Link href="/auth/login" className="text-indigo-600 font-semibold hover:underline">
                 Sign in
               </Link>
             </p>
