@@ -211,4 +211,90 @@ export class OrdersService {
     return this.ordersRepository.save(order);
   }
 
- 
+  async getDashboardStats(): Promise<{
+    totalSales: number;
+    totalOrders: number;
+    averageOrderValue: number;
+    ordersByStatus: Record<string, number>;
+    topProducts: Array<{
+      productId: string;
+      name: string;
+      imageUrl: string;
+      category: string;
+      price: number;
+      sold: number;
+      revenue: number;
+    }>;
+  }> {
+    const orders = await this.ordersRepository.find();
+
+    const totalOrders = orders.length;
+    const totalSales = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+
+    // Count orders by status
+    const ordersByStatus: Record<string, number> = {
+      pending: 0,
+      processing: 0,
+      shipped: 0,
+      delivered: 0,
+      cancelled: 0,
+    };
+    for (const order of orders) {
+      const s = order.status as string;
+      if (s in ordersByStatus) {
+        ordersByStatus[s]++;
+      }
+    }
+
+    // Aggregate top-selling products from order items
+    const productMap = new Map<
+      string,
+      { name: string; imageUrl: string; category: string; price: number; sold: number }
+    >();
+
+    for (const order of orders) {
+      if (!Array.isArray(order.items)) continue;
+      for (const item of order.items) {
+        const product = item.product as Record<string, any>;
+        if (!product) continue;
+        const pid = String(product.id ?? product._id ?? '');
+        if (!pid) continue;
+
+        const existing = productMap.get(pid);
+        if (existing) {
+          existing.sold += Number(item.quantity) || 0;
+        } else {
+          productMap.set(pid, {
+            name: product.name ?? 'Unknown',
+            imageUrl: product.imageUrl ?? '',
+            category: product.category ?? '',
+            price: Number(item.priceAtPurchase ?? product.price) || 0,
+            sold: Number(item.quantity) || 0,
+          });
+        }
+      }
+    }
+
+    const topProducts = Array.from(productMap.entries())
+      .map(([productId, data]) => ({
+        productId,
+        name: data.name,
+        imageUrl: data.imageUrl,
+        category: data.category,
+        price: data.price,
+        sold: data.sold,
+        revenue: Math.round(data.price * data.sold * 100) / 100,
+      }))
+      .sort((a, b) => b.sold - a.sold)
+      .slice(0, 5);
+
+    return {
+      totalSales: Math.round(totalSales * 100) / 100,
+      totalOrders,
+      averageOrderValue: Math.round(averageOrderValue * 100) / 100,
+      ordersByStatus,
+      topProducts,
+    };
+  }
+}

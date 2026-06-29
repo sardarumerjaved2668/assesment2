@@ -2,7 +2,7 @@ import { Injectable, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
-import { User } from '../users/entities/user.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 
 export interface UserResponseDto {
@@ -59,7 +59,8 @@ export class AuthService {
       throw new ConflictException('Email is already registered');
     }
 
-    const createdUser = await this.usersService.create(dto);
+    // Always force customer role — admins cannot be created via public registration
+    const createdUser = await this.usersService.create({ ...dto, role: UserRole.CUSTOMER });
 
     const payload = {
       sub: createdUser.id.toString(),

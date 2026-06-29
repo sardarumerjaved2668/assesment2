@@ -216,3 +216,13 @@ Implemented in the "UI/UX redesign" commit. Applied consistently across all stor
 - **Admin layout:** Sticky top header with dynamic breadcrumb; content area `ml-64 bg-gray-50`.
 - **Admin orders:** Client-side status filter tabs added (statusFilter state, filteredOrders derived).
 - **OrderStatusBadge:** Colored dot + pill, each status has distinct bg/border/text color.
+lient-side status filter tabs added (statusFilter state, filteredOrders derived).
+- **OrderStatusBadge:** Colored dot + pill, each status has distinct bg/border/text color.
+
+## Known Issues / Watch Out For
+- `next.config.mjs` must use JSDoc types (`/** @type */`), NOT `import type` syntax. Remote image hosts are whitelisted under `images.domains` (includes `localhost` for uploaded images).
+- TypeORM `synchronize: true` is fine for dev, must be `false` in production.
+- ObjectId is serialized to a hex string in JSON responses — frontend `Product.id` / `Order.id` are strings.
+- Auth token in sessionStorage (logged out on tab close — acceptable for assessment). Mock tokens start with `mock_`.
+- The backend must be **restarted** after backend code changes for new routes to load; confirm endpoints at `http://localhost:3001/api/docs`.
+- `backend/uploads/` holds uploaded images; only `.gitkeep` is tracked (binaries are git-ignored).

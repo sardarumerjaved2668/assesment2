@@ -500,4 +500,54 @@ export async function deleteCategory(
   token: string,
 ): Promise<void> {
   const res = await fetch(`${API_URL}/categories/${id}`, {
-    method: 'DELETE'
+    method: 'DELETE',
+    headers: authHeaders(token),
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!res.ok) {
+    let errorMessage = `Request failed with status ${res.status}`;
+    try {
+      const body = await res.json();
+      errorMessage = Array.isArray(body.message)
+        ? body.message.join(', ')
+        : body.message || errorMessage;
+    } catch {
+      // ignore JSON parse error
+    }
+    throw new Error(errorMessage);
+  }
+}
+
+/** Toggle a category's isActive flag (admin only). */
+export async function toggleCategoryActive(
+  id: string,
+  token: string,
+): Promise<Category> {
+  const res = await fetch(`${API_URL}/categories/${id}/toggle-active`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+    signal: AbortSignal.timeout(10000),
+  });
+  return handleResponse<Category>(res);
+}
+
+// ─── Users / Customers API ────────────────────────────────────────────────────
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: 'customer' | 'admin';
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Get all users (admin only). */
+export async function fetchUsers(token: string): Promise<AdminUser[]> {
+  const res = await fetch(`${API_URL}/users`, {
+    headers: authHeaders(token),
+    signal: AbortSignal.timeout(8000),
+  });
+  return handleResponse<AdminUser[]>(res);
+}

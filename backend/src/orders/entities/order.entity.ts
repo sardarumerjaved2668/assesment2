@@ -49,3 +49,4 @@ export class Order {
 
   @UpdateDateColumn()
   updatedAt: Date;
+}

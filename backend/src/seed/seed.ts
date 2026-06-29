@@ -167,4 +167,42 @@ async function seed() {
     });
     await userRepo.save(customer);
     console.log('Customer user created:', customerEmail);
+  } else {
+    console.log('Customer user already exists:', customerEmail);
   }
+
+  // Upsert categories
+  for (const catData of seedCategories) {
+    const existing = await categoryRepo.findOne({ where: { slug: catData.slug } });
+    if (!existing) {
+      const category = categoryRepo.create({ ...catData, isActive: true });
+      await categoryRepo.save(category);
+      console.log('Category created:', catData.name);
+    } else {
+      console.log('Category already exists:', catData.name);
+    }
+  }
+
+  // Upsert products
+  for (const productData of products) {
+    const existing = await productRepo.findOne({
+      where: { name: productData.name },
+    });
+    if (!existing) {
+      const product = productRepo.create(productData);
+      await productRepo.save(product);
+      console.log('Product created:', productData.name);
+    } else {
+      await productRepo.save({ ...existing, ...productData });
+      console.log('Product updated:', productData.name);
+    }
+  }
+
+  console.log('Seed completed successfully.');
+  await AppDataSource.destroy();
+}
+
+seed().catch((err) => {
+  console.error('Seed failed:', err);
+  process.exit(1);
+});

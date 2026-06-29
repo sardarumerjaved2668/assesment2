@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { registerUser } from '@/lib/api';
 
 interface FormData {
   firstName: string;
@@ -33,6 +34,7 @@ export default function RegisterPage() {
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const update = (field: keyof FormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -76,10 +78,21 @@ export default function RegisterPage() {
     if (!validate()) return;
 
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setIsLoading(false);
+    setApiError(null);
 
-    router.push('/auth/login?registered=true');
+    try {
+      await registerUser({
+        email: form.email,
+        password: form.password,
+        firstName: form.firstName,
+        lastName: form.lastName,
+      });
+      router.push('/auth/login?registered=true');
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const fields: { key: keyof FormData; label: string; type: string; placeholder: string }[] = [
@@ -159,6 +172,12 @@ export default function RegisterPage() {
               <p className="text-gray-500 text-sm mt-1">Join ShopNext today</p>
             </div>
 
+            {apiError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                {apiError}
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               {/* First & Last name side by side */}
               <div className="grid grid-cols-2 gap-4">
@@ -197,4 +216,39 @@ export default function RegisterPage() {
                       onChange={(e) => update(key, e.target.value)}
                       placeholder={field.placeholder}
                       autoComplete={key === 'email' ? 'email' : key === 'password' ? 'new-password' : 'new-password'}
-                      className={`w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${errors[key] ? 'border
+                      className={`w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${errors[key] ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
+                    />
+                    {errors[key] && <p className="text-xs text-red-500 mt-1">{errors[key]}</p>}
+                  </div>
+                );
+              })}
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3 px-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-semibold text-sm hover:from-indigo-700 hover:to-violet-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 mt-2"
+              >
+                {isLoading ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Creating account...
+                  </>
+                ) : 'Create Account'}
+              </button>
+            </form>
+
+            <p className="text-sm text-gray-500 text-center mt-6">
+              {'Already have an account? '}
+              <Link href="/auth/login" className="text-indigo-600 font-semibold hover:underline">
+                Sign in
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

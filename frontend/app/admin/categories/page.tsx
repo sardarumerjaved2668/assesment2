@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Category } from '@/lib/types';
 import { fetchCategories, createCategory, updateCategory, deleteCategory, toggleCategoryActive } from '@/lib/api';
 import { useAuthContext } from '@/context/AuthContext';
+import ImageUpload from '@/components/ImageUpload';
 
 const DUMMY_CATEGORIES: Category[] = [
   { id: '1', name: 'Electronics', slug: 'electronics', description: 'Gadgets and devices', imageUrl: '', isActive: true, createdAt: '', updatedAt: '' },
@@ -396,15 +397,13 @@ export default function AdminCategoriesPage() {
                 />
               </div>
 
-              {/* Image URL */}
+              {/* Image */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Image URL</label>
-                <input
-                  type="text"
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, imageUrl: e.target.value }))}
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Image</label>
+                <ImageUpload
+                  currentUrl={formData.imageUrl}
+                  onUrlChange={(url) => setFormData((prev) => ({ ...prev, imageUrl: url }))}
+                  token={token}
                 />
               </div>
 

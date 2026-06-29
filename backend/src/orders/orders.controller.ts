@@ -59,4 +59,26 @@ export class OrdersController {
     return user.role === 'admin'
       ? this.ordersService.findAll()
       : this.ordersService.findAllForUser(user.id);
-  
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get an order by id' })
+  findOne(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.ordersService.findOne(id, user.id, user.role === 'admin');
+  }
+
+  @Put(':id/status')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Update order status (admin only): pending → processing → shipped → delivered | cancelled' })
+  @ApiResponse({ status: 200, description: 'Order status updated' })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT' })
+  @ApiResponse({ status: 403, description: 'Forbidden — admin role required' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
+  updateStatus(
+    @Param('id') id: string,
+    @Body('status') status: OrderStatus,
+  ) {
+    return this.ordersService.updateStatus(id, status);
+  }
+}
