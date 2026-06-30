@@ -96,3 +96,63 @@ On mount, `AuthContext` starts with `isLoading=true`, reads sessionStorage, and 
 3. Deploy: frontend to Vercel, backend to Railway/Render
 4. Rate limiting on auth endpoints, helmet.js for security headers
 5. Pagination on admin orders page
+
+---
+
+## Design System
+
+Applied consistently across all storefront and admin pages.
+
+### Colors
+| Role | Value |
+|------|-------|
+| Primary | indigo-600 (#4F46E5), hover indigo-700 |
+| Secondary | violet-600 |
+| Brand gradient | `bg-gradient-to-r from-violet-600 to-indigo-600` |
+| Hero/dark | `bg-gradient-to-br from-slate-900 via-indigo-950 to-violet-950` |
+| Admin sidebar | bg-slate-900, active bg-indigo-600 |
+| Page bg | gray-50 |
+| Cards | bg-white |
+| Success | emerald-600 |
+| Warning | amber-500 |
+| Error | red-600 |
+
+### Component Tokens
+- **Cards:** `bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow`
+- **Primary button:** `bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-all`
+- **Gradient button:** `bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl`
+- **Secondary button:** `border border-gray-200 bg-white text-gray-700 rounded-xl hover:bg-gray-50`
+- **Inputs:** `border border-gray-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm`
+- **Badges:** `px-2.5 py-0.5 rounded-full text-xs font-semibold` with status-matched colors
+
+### Typography
+- Hero: `text-5xl font-black tracking-tight` (mobile: `text-3xl`)
+- Page title: `text-2xl sm:text-3xl font-bold text-gray-900`
+- Section label: `text-xs font-semibold uppercase tracking-widest text-gray-400`
+- Body: `text-sm text-gray-600 leading-relaxed`
+
+### Key Design Decisions
+- **Navbar:** Announcement bar (gradient) + white sticky bar + rounded-full search + gradient logo text
+- **Footer:** Dark `bg-gray-900` 4-column grid (Brand / Shop / Account / Info)
+- **ProductCard:** `aspect-square` image, hover scale + quick-add overlay, decorative star rating
+- **Auth pages:** Split-screen — dark gradient left panel (brand + features) + white card right panel
+- **Admin sidebar:** Fixed `w-64 bg-slate-900`, gradient logo icon, active links `bg-indigo-600 rounded-xl`, gradient user avatar
+- **Admin layout:** Sticky top header with dynamic breadcrumb; content area `ml-64 bg-gray-50`
+- **Admin orders:** Client-side status filter tabs (statusFilter state, filteredOrders derived)
+- **OrderStatusBadge:** Colored dot + pill, each status has distinct bg/border/text color
+
+---
+
+## Known Issues / Watch Out For
+- `next.config.mjs` must use JSDoc types (`/** @type */`), NOT `import type` syntax. Remote image hosts whitelisted under `images.domains` (includes `localhost`)
+- TypeORM `synchronize: true` is fine for dev, must be `false` in production
+- ObjectId is serialized to a hex string in JSON — frontend `Product.id` / `Order.id` are strings
+- Auth token in sessionStorage (logged out on tab close — acceptable for assessment). Mock tokens start with `mock_`
+- Backend must be **restarted** after code changes for new routes to load; confirm endpoints at `http://localhost:3001/api/docs`
+- `backend/uploads/` holds uploaded images; only `.gitkeep` is tracked (binaries are git-ignored)
+
+---
+
+## Additional API Endpoints (Admin)
+- `GET /products/stats` — Admin JWT — product stats for the dashboard
+- `GET /orders/stats` — Admin JWT — dashboard analytics: totalSales, totalOrders, averageOrderValue, ordersByStatus, topProducts
