@@ -91,12 +91,6 @@ Create `update-[name].dto.ts` using `PartialType(Create[Name]Dto)`.
 File: `backend/src/[name]/[name].service.ts`
 
 ```typescript
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { MongoRepository } from 'typeorm';
-import { ObjectId } from 'mongodb';
-import { [Name] } from './entities/[name].entity';
-
 @Injectable()
 export class [Name]Service {
   constructor(
@@ -109,31 +103,21 @@ export class [Name]Service {
     return new ObjectId(id);
   }
 
-  async findAll(): Promise<[Name][]> {
-    return this.repo.find({ order: { createdAt: 'DESC' } });
-  }
-
-  async findOne(id: string): Promise<[Name]> {
+  async findAll() { return this.repo.find({ order: { createdAt: 'DESC' } }); }
+  async findOne(id: string) {
     const item = await this.repo.findOneBy({ _id: this.toObjectId(id) });
     if (!item) throw new NotFoundException(`[Name] "${id}" not found`);
     return item;
   }
-
-  async create(dto: Create[Name]Dto): Promise<[Name]> {
-    const item = this.repo.create(dto);
-    return this.repo.save(item);
-  }
-
-  async update(id: string, dto: Update[Name]Dto): Promise<[Name]> {
+  async create(dto: Create[Name]Dto) { return this.repo.save(this.repo.create(dto)); }
+  async update(id: string, dto: Update[Name]Dto) {
     const item = await this.findOne(id);
     Object.assign(item, dto);
     return this.repo.save(item);
   }
-
-  async remove(id: string): Promise<{ message: string }> {
-    const item = await this.findOne(id);
-    await this.repo.remove(item);
-    return { message: `[Name] deleted successfully` };
+  async remove(id: string) {
+    await this.repo.remove(await this.findOne(id));
+    return { message: '[Name] deleted successfully' };
   }
 }
 ```
@@ -142,61 +126,13 @@ export class [Name]Service {
 
 ## Step 5 — Create the controller
 
-File: `backend/src/[name]/[name].controller.ts`
-
-```typescript
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-
-@ApiTags('[name]s')
-@Controller('[name]s')
-export class [Name]Controller {
-  constructor(private readonly [name]Service: [Name]Service) {}
-
-  @Get()
-  findAll() { return this.[name]Service.findAll(); }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) { return this.[name]Service.findOne(id); }
-
-  @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  @ApiBearerAuth()
-  create(@Body() dto: Create[Name]Dto) { return this.[name]Service.create(dto); }
-
-  @Put(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  @ApiBearerAuth()
-  update(@Param('id') id: string, @Body() dto: Update[Name]Dto) {
-    return this.[name]Service.update(id, dto);
-  }
-
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  @ApiBearerAuth()
-  remove(@Param('id') id: string) { return this.[name]Service.remove(id); }
-}
-```
+All admin write routes get `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Roles('admin')` + `@ApiBearerAuth()`.
 
 ---
 
 ## Step 6 — Create the module file
 
-File: `backend/src/[name]/[name].module.ts`
-
 ```typescript
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { [Name] } from './entities/[name].entity';
-import { [Name]Service } from './[name].service';
-import { [Name]Controller } from './[name].controller';
-
 @Module({
   imports: [TypeOrmModule.forFeature([[Name]])],
   controllers: [[Name]Controller],
@@ -210,26 +146,13 @@ export class [Name]Module {}
 
 ## Step 7 — Register in app.module.ts
 
-Read `backend/src/app.module.ts`, then add the new module to the `imports` array:
-
-```typescript
-import { [Name]Module } from './[name]/[name].module';
-
-@Module({
-  imports: [
-    // ... existing modules
-    [Name]Module,
-  ],
-})
-```
+Add `[Name]Module` to the `imports` array in `src/app.module.ts`.
 
 ---
 
-## Step 8 — Verify
-
-After writing all files, confirm:
-- Entity is in `TypeOrmModule.forFeature([...])` in the module file
-- Module is imported in `app.module.ts`
-- All admin write routes have `@UseGuards(JwtAuthGuard, RolesGuard)` and `@Roles('admin')`
-- DTOs have `@ApiProperty` decorators for Swagger
+## Checklist
+- Entity uses `@ObjectIdColumn` + `id` getter
+- Module registered in `app.module.ts`
+- Admin write routes have `JwtAuthGuard + RolesGuard + @Roles('admin')`
+- DTOs have `@ApiProperty` decorators
 - No hardcoded secrets or connection strings
